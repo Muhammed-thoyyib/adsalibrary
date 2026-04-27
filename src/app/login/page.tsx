@@ -43,7 +43,7 @@ export default function LoginPage() {
         title: "Authentication Failed",
         description: role === 'user' 
           ? "Check Name/Code. (Try: Alice Johnson / LIB001)"
-          : "Invalid credentials. (Try: admin@adsalibrary.com)",
+          : "Invalid credentials. (Try: mthoyyib40@gmail.com)",
         variant: "destructive"
       });
     }
@@ -114,7 +114,7 @@ export default function LoginPage() {
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="admin@adsalibrary.com" 
+                    placeholder="mthoyyib40@gmail.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -151,7 +151,7 @@ export default function LoginPage() {
             </div>
             <p className="text-center text-sm text-muted-foreground">
               Member: Alice Johnson / LIB001<br/>
-              Librarian: admin@adsalibrary.com
+              Librarian: mthoyyib40@gmail.com
             </p>
           </CardFooter>
         </Card>
