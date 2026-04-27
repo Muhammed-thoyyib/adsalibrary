@@ -23,7 +23,7 @@ export function Navbar() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center space-x-2">
             <Library className="h-6 w-6 text-primary" />
-            <span className="font-headline text-xl font-bold tracking-tight text-primary">ADSAIBRARY</span>
+            <span className="font-headline text-xl font-bold tracking-tight text-primary">ADSALIBRARY</span>
           </Link>
           <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
             <Link href="/books" className="transition-colors hover:text-primary">Catalog</Link>
@@ -81,7 +81,7 @@ export function Navbar() {
                 <Button variant="outline" size="sm" className="hidden sm:inline-flex">Login</Button>
               </Link>
               <Link href="/login">
-                <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">Join ADSAIBRARY</Button>
+                <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">Join ADSALIBRARY</Button>
               </Link>
             </div>
           )}

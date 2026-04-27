@@ -35,7 +35,7 @@ export default function Home() {
               Discover Your Next <span className="text-accent">Great Read</span>
             </h1>
             <p className="mx-auto max-w-[700px] text-white/80 md:text-xl font-body">
-              Search through thousands of titles, manage your borrowings, and explore a world of knowledge with ADSAIBRARY.
+              Search through thousands of titles, manage your borrowings, and explore a world of knowledge with ADSALIBRARY.
             </p>
             <div className="w-full max-w-2xl mt-8">
               <div className="relative group">
@@ -109,9 +109,9 @@ export default function Home() {
         <div className="container px-4 md:px-6 mx-auto max-w-7xl flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center space-x-2">
             <Library className="h-5 w-5 text-primary" />
-            <span className="font-headline font-bold text-primary">ADSAIBRARY</span>
+            <span className="font-headline font-bold text-primary">ADSALIBRARY</span>
           </div>
-          <p className="text-sm text-muted-foreground">© 2025 ADSAIBRARY. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">© 2025 ADSALIBRARY. All rights reserved.</p>
           <div className="flex gap-4">
             <Link href="#" className="text-sm text-muted-foreground hover:text-primary">Terms</Link>
             <Link href="#" className="text-sm text-muted-foreground hover:text-primary">Privacy</Link>

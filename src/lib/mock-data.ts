@@ -83,7 +83,7 @@ export const INITIAL_MEMBERS: Member[] = [
   {
     id: 'm2',
     name: 'Bob Librarian',
-    email: 'admin@adsaibrary.com',
+    email: 'admin@adsalibrary.com',
     member_id: 'ADM001',
     phone: '555-0202',
     role: 'admin',
