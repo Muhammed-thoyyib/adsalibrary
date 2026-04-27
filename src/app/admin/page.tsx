@@ -17,7 +17,8 @@ import {
   Trash2,
   CheckCircle2,
   Sparkles,
-  Clock
+  Clock,
+  UserPlus
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,9 +46,23 @@ import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
-  const { books, members, transactions, addBook, deleteBook, issueBook, returnBook } = useCatalogify();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { 
+    books, 
+    members, 
+    transactions, 
+    addBook, 
+    deleteBook, 
+    addMember, 
+    deleteMember, 
+    issueBook, 
+    returnBook 
+  } = useCatalogify();
+  
+  const [bookSearchQuery, setBookSearchQuery] = useState('');
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [isAddingBook, setIsAddingBook] = useState(false);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
@@ -55,8 +70,18 @@ export default function AdminDashboard() {
     category: '',
     total_copies: 1,
     location: '',
-    description: '' // Temporary field for AI summary generation
+    description: ''
   });
+
+  const [newMember, setNewMember] = useState({
+    name: '',
+    email: '',
+    member_id: '',
+    phone: '',
+    role: 'user' as 'user' | 'admin',
+    status: 'active' as 'active' | 'suspended'
+  });
+
   const [aiLoading, setAiLoading] = useState(false);
   const { toast } = useToast();
 
@@ -80,7 +105,7 @@ export default function AdminDashboard() {
         ...prev,
         summary: result.summary,
         keyThemes: result.keyThemes
-      }));
+      } as any));
       toast({
         title: "AI Analysis Complete",
         description: "Successfully generated summary and themes.",
@@ -110,11 +135,28 @@ export default function AdminDashboard() {
     });
     setIsAddingBook(false);
     setNewBook({ title: '', author: '', isbn: '', category: '', total_copies: 1, location: '', description: '' });
+    toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
+  };
+
+  const handleAddMemberSubmit = () => {
+    if (!newMember.name || !newMember.member_id) {
+      toast({ title: "Error", description: "Name and Member ID are required.", variant: "destructive" });
+      return;
+    }
+    addMember(newMember);
+    setIsAddingMember(false);
+    setNewMember({ name: '', email: '', member_id: '', phone: '', role: 'user', status: 'active' });
+    toast({ title: "Member Added", description: "The new member has been registered." });
   };
 
   const filteredBooks = books.filter(b => 
-    b.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    b.author.toLowerCase().includes(searchQuery.toLowerCase())
+    b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
+    b.author.toLowerCase().includes(bookSearchQuery.toLowerCase())
+  );
+
+  const filteredMembers = members.filter(m => 
+    m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
+    m.member_id.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
 
   return (
@@ -123,130 +165,167 @@ export default function AdminDashboard() {
       <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-headline font-bold">Admin Dashboard</h1>
+            <h1 className="text-3xl font-headline font-bold text-primary">Admin Dashboard</h1>
             <p className="text-muted-foreground">Manage library assets, members, and tracking.</p>
           </div>
-          <Dialog open={isAddingBook} onOpenChange={setIsAddingBook}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary text-primary-foreground">
-                <Plus className="mr-2 h-4 w-4" /> Add New Book
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="font-headline">Add Library Book</DialogTitle>
-                <DialogDescription>
-                  Enter the book details. Use our AI assistant to enrich your catalog.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input id="title" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} />
+          <div className="flex gap-2">
+            <Dialog open={isAddingMember} onOpenChange={setIsAddingMember}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-primary text-primary hover:bg-primary/5">
+                  <UserPlus className="mr-2 h-4 w-4" /> Add Member
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Register New Member</DialogTitle>
+                  <DialogDescription>Create a new member profile for the library.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="mem-name">Full Name</Label>
+                    <Input id="mem-name" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="author">Author</Label>
-                    <Input id="author" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} />
+                  <div className="grid gap-2">
+                    <Label htmlFor="mem-id">Member ID / Code</Label>
+                    <Input id="mem-id" placeholder="e.g. LIB005" value={newMember.member_id} onChange={e => setNewMember({...newMember, member_id: e.target.value})} />
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="isbn">ISBN</Label>
-                    <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
+                  <div className="grid gap-2">
+                    <Label htmlFor="mem-email">Email</Label>
+                    <Input id="mem-email" type="email" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Input id="category" value={newBook.category} onChange={e => setNewBook({...newBook, category: e.target.value})} />
+                  <div className="grid gap-2">
+                    <Label htmlFor="mem-phone">Phone</Label>
+                    <Input id="mem-phone" value={newMember.phone} onChange={e => setNewMember({...newMember, phone: e.target.value})} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="copies">Total Copies</Label>
-                    <Input id="copies" type="number" value={newBook.total_copies} onChange={e => setNewBook({...newBook, total_copies: parseInt(e.target.value)})} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location (Shelf)</Label>
-                    <Input id="location" value={newBook.location} onChange={e => setNewBook({...newBook, location: e.target.value})} />
-                  </div>
-                </div>
-                <div className="space-y-2 border-t pt-4">
-                  <Label className="flex items-center gap-2">
-                    AI Insight Tool <Sparkles className="h-4 w-4 text-accent" />
-                  </Label>
-                  <DialogDescription className="pb-2">Provide a short book description to generate a summary and themes automatically.</DialogDescription>
-                  <textarea 
-                    className="w-full min-h-[100px] p-3 text-sm border rounded-md" 
-                    placeholder="Enter book description/blurb here..."
-                    value={newBook.description}
-                    onChange={e => setNewBook({...newBook, description: e.target.value})}
-                  />
-                  <Button 
-                    variant="outline" 
-                    className="w-full border-accent text-accent hover:bg-accent/10"
-                    onClick={handleAiSummary}
-                    disabled={aiLoading}
-                  >
-                    {aiLoading ? "Generating..." : "Generate AI Insights"}
-                  </Button>
-                  {(newBook as any).summary && (
-                    <div className="mt-4 p-3 bg-accent/5 rounded-md border border-accent/20">
-                      <p className="text-xs font-semibold uppercase text-accent mb-1">Generated Summary</p>
-                      <p className="text-sm">{(newBook as any).summary}</p>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setIsAddingMember(false)}>Cancel</Button>
+                  <Button className="bg-primary text-white" onClick={handleAddMemberSubmit}>Register Member</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAddingBook} onOpenChange={setIsAddingBook}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
+                  <Plus className="mr-2 h-4 w-4" /> Add New Book
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="font-headline text-2xl">Add Library Book</DialogTitle>
+                  <DialogDescription>
+                    Enter the book details. Use our AI assistant to enrich your catalog.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title</Label>
+                      <Input id="title" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} />
                     </div>
-                  )}
+                    <div className="space-y-2">
+                      <Label htmlFor="author">Author</Label>
+                      <Input id="author" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="isbn">ISBN</Label>
+                      <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Input id="category" value={newBook.category} onChange={e => setNewBook({...newBook, category: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="copies">Total Copies</Label>
+                      <Input id="copies" type="number" value={newBook.total_copies} onChange={e => setNewBook({...newBook, total_copies: parseInt(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location (Shelf)</Label>
+                      <Input id="location" value={newBook.location} onChange={e => setNewBook({...newBook, location: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="space-y-2 border-t pt-4">
+                    <Label className="flex items-center gap-2 font-semibold">
+                      AI Insight Tool <Sparkles className="h-4 w-4 text-accent" />
+                    </Label>
+                    <DialogDescription className="pb-2">Provide a short book description to generate a summary and themes automatically.</DialogDescription>
+                    <textarea 
+                      className="w-full min-h-[100px] p-3 text-sm border rounded-md focus:ring-2 focus:ring-primary/20 outline-none" 
+                      placeholder="Enter book description/blurb here..."
+                      value={newBook.description}
+                      onChange={e => setNewBook({...newBook, description: e.target.value})}
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="w-full border-accent text-accent hover:bg-accent/10"
+                      onClick={handleAiSummary}
+                      disabled={aiLoading}
+                    >
+                      {aiLoading ? "Generating..." : "Generate AI Insights"}
+                    </Button>
+                    {(newBook as any).summary && (
+                      <div className="mt-4 p-4 bg-accent/5 rounded-xl border border-accent/20">
+                        <p className="text-xs font-bold uppercase text-accent mb-2 tracking-wider">Generated Summary</p>
+                        <p className="text-sm leading-relaxed text-foreground/90">{(newBook as any).summary}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddingBook(false)}>Cancel</Button>
-                <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save Book</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setIsAddingBook(false)}>Cancel</Button>
+                  <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save Book</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </header>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="hover:border-primary/50 transition-colors shadow-sm">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Books</p>
                 <p className="text-2xl font-bold">{books.length}</p>
               </div>
-              <div className="p-2 bg-primary/10 rounded-lg">
+              <div className="p-3 bg-primary/10 rounded-xl">
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:border-accent/50 transition-colors shadow-sm">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Members</p>
                 <p className="text-2xl font-bold">{members.length}</p>
               </div>
-              <div className="p-2 bg-accent/10 rounded-lg">
+              <div className="p-3 bg-accent/10 rounded-xl">
                 <Users className="h-6 w-6 text-accent" />
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:border-primary/50 transition-colors shadow-sm">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Issued Books</p>
+                <p className="text-sm font-medium text-muted-foreground">Active Issues</p>
                 <p className="text-2xl font-bold">{transactions.filter(t => t.status === 'issued').length}</p>
               </div>
-              <div className="p-2 bg-primary/10 rounded-lg">
+              <div className="p-3 bg-primary/10 rounded-xl">
                 <ArrowLeftRight className="h-6 w-6 text-primary" />
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="hover:border-destructive/50 transition-colors shadow-sm">
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Overdue</p>
                 <p className="text-2xl font-bold text-destructive">2</p>
               </div>
-              <div className="p-2 bg-destructive/10 rounded-lg">
+              <div className="p-3 bg-destructive/10 rounded-xl">
                 <AlertCircle className="h-6 w-6 text-destructive" />
               </div>
             </CardContent>
@@ -254,26 +333,26 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="books" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="books">Book Inventory</TabsTrigger>
+          <TabsList className="mb-6 bg-secondary/50 p-1">
+            <TabsTrigger value="books">Inventory</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="transactions">Issue/Return History</TabsTrigger>
+            <TabsTrigger value="transactions">History</TabsTrigger>
           </TabsList>
           
           <TabsContent value="books">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="font-headline">Books Catalog</CardTitle>
-                  <CardDescription>Manage all physical and digital library copies.</CardDescription>
+                  <CardTitle className="font-headline text-xl">Book Inventory</CardTitle>
+                  <CardDescription>Manage your library's physical and digital collection.</CardDescription>
                 </div>
-                <div className="relative w-72">
+                <div className="relative w-full md:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
                     placeholder="Search books..." 
                     className="pl-9" 
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
+                    value={bookSearchQuery}
+                    onChange={e => setBookSearchQuery(e.target.value)}
                   />
                 </div>
               </CardHeader>
@@ -296,15 +375,15 @@ export default function AdminDashboard() {
                           <div className="text-xs text-muted-foreground">{book.author}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{book.category}</Badge>
+                          <Badge variant="secondary" className="font-normal">{book.category}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <span className={`h-2 w-2 rounded-full ${book.available_copies > 0 ? 'bg-green-500' : 'bg-destructive'}`} />
-                            {book.available_copies} / {book.total_copies}
+                            <span className="text-sm">{book.available_copies} / {book.total_copies}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{book.location}</TableCell>
+                        <TableCell className="font-mono text-xs">{book.location}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" onClick={() => deleteBook(book.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -320,15 +399,26 @@ export default function AdminDashboard() {
 
           <TabsContent value="members">
             <Card>
-              <CardHeader>
-                <CardTitle className="font-headline">Library Members</CardTitle>
-                <CardDescription>View and manage registered members and their roles.</CardDescription>
+              <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="font-headline text-xl">Member Directory</CardTitle>
+                  <CardDescription>View and manage all registered library members.</CardDescription>
+                </div>
+                <div className="relative w-full md:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search name or ID..." 
+                    className="pl-9" 
+                    value={memberSearchQuery}
+                    onChange={e => setMemberSearchQuery(e.target.value)}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Member Name</TableHead>
+                      <TableHead>Name & Contact</TableHead>
                       <TableHead>Member ID</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
@@ -336,13 +426,15 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {members.map(member => (
+                    {filteredMembers.map(member => (
                       <TableRow key={member.id}>
                         <TableCell>
                           <div className="font-medium">{member.name}</div>
-                          <div className="text-xs text-muted-foreground">{member.email}</div>
+                          <div className="text-xs text-muted-foreground">{member.email || member.phone}</div>
                         </TableCell>
-                        <TableCell>{member.member_id}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono">{member.member_id}</Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="capitalize">
                             {member.role}
@@ -354,8 +446,8 @@ export default function AdminDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" onClick={() => deleteMember(member.id)} disabled={member.role === 'admin' && members.filter(m => m.role === 'admin').length <= 1}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -369,8 +461,8 @@ export default function AdminDashboard() {
           <TabsContent value="transactions">
             <Card>
               <CardHeader>
-                <CardTitle className="font-headline">Recent Transactions</CardTitle>
-                <CardDescription>Track all book issue and return events.</CardDescription>
+                <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
+                <CardDescription>Real-time log of all book circulations.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -378,10 +470,10 @@ export default function AdminDashboard() {
                     <TableRow>
                       <TableHead>Book</TableHead>
                       <TableHead>Member</TableHead>
-                      <TableHead>Issue Date</TableHead>
-                      <TableHead>Due Date</TableHead>
+                      <TableHead>Issued</TableHead>
+                      <TableHead>Due</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -390,12 +482,12 @@ export default function AdminDashboard() {
                       const member = members.find(m => m.id === t.member_id);
                       return (
                         <TableRow key={t.id}>
-                          <TableCell className="font-medium">{book?.title || 'Unknown'}</TableCell>
+                          <TableCell className="font-medium max-w-[200px] truncate">{book?.title || 'Unknown'}</TableCell>
                           <TableCell>{member?.name || 'Unknown'}</TableCell>
-                          <TableCell>{t.issue_date}</TableCell>
-                          <TableCell>{t.due_date}</TableCell>
+                          <TableCell className="text-xs">{t.issue_date}</TableCell>
+                          <TableCell className="text-xs">{t.due_date}</TableCell>
                           <TableCell>
-                            <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit">
+                            <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit text-[10px] uppercase tracking-tighter">
                               {t.status === 'returned' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                               {t.status}
                             </Badge>

@@ -70,6 +70,16 @@ export function useCatalogify() {
     setBooks(prev => prev.filter(b => b.id !== id));
   };
 
+  const addMember = (member: Omit<Member, 'id'>) => {
+    const newMember = { ...member, id: 'm' + Math.random().toString().slice(2, 6) };
+    setMembers(prev => [...prev, newMember]);
+    return newMember;
+  };
+
+  const deleteMember = (id: string) => {
+    setMembers(prev => prev.filter(m => m.id !== id));
+  };
+
   const issueBook = (bookId: string, memberId: string) => {
     const book = books.find(b => b.id === bookId);
     if (!book || book.available_copies <= 0) return false;
@@ -112,6 +122,8 @@ export function useCatalogify() {
     addBook,
     updateBook,
     deleteBook,
+    addMember,
+    deleteMember,
     issueBook,
     returnBook,
     setMembers
