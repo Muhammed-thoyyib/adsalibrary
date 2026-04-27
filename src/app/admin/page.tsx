@@ -19,7 +19,8 @@ import {
   Barcode,
   Eye,
   History,
-  Calendar
+  Calendar,
+  HandHelping
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -43,6 +44,13 @@ import {
   DialogTrigger 
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
 import { useToast } from '@/hooks/use-toast';
 import { Member } from '@/lib/mock-data';
@@ -56,13 +64,15 @@ export default function AdminDashboard() {
     deleteBook, 
     addMember, 
     deleteMember, 
-    returnBook 
+    returnBook,
+    issueBook 
   } = useCatalogify();
   
   const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [isAddingBook, setIsAddingBook] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [isIssuingBook, setIsIssuingBook] = useState(false);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   
   const [newBook, setNewBook] = useState({
@@ -81,6 +91,11 @@ export default function AdminDashboard() {
     member_id: '',
     role: 'user' as 'user' | 'admin',
     status: 'active' as 'active' | 'suspended'
+  });
+
+  const [issueData, setIssueData] = useState({
+    bookId: '',
+    memberId: ''
   });
 
   const [aiLoading, setAiLoading] = useState(false);
@@ -155,6 +170,21 @@ export default function AdminDashboard() {
     toast({ title: "Member Registered", description: `Member ${newMember.name} has been added to ADSALIBRARY.` });
   };
 
+  const handleIssueSubmit = () => {
+    if (!issueData.bookId || !issueData.memberId) {
+      toast({ title: "Error", description: "Please select both a book and a member.", variant: "destructive" });
+      return;
+    }
+    const success = issueBook(issueData.bookId, issueData.memberId);
+    if (success) {
+      toast({ title: "Success", description: "Book issued successfully." });
+      setIsIssuingBook(false);
+      setIssueData({ bookId: '', memberId: '' });
+    } else {
+      toast({ title: "Error", description: "Could not issue book. Check availability.", variant: "destructive" });
+    }
+  };
+
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
     b.author.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
@@ -166,7 +196,6 @@ export default function AdminDashboard() {
     m.member_id.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
 
-  // Helper for Member Detail View
   const getMemberTransactions = (memberId: string) => {
     return transactions.filter(t => t.member_id === memberId);
   };
@@ -180,7 +209,57 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-headline font-bold text-primary">Admin Dashboard</h1>
             <p className="text-muted-foreground">Manage ADSALIBRARY assets, members, and tracking.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Dialog open={isIssuingBook} onOpenChange={setIsIssuingBook}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="border-accent text-accent hover:bg-accent/5">
+                  <HandHelping className="mr-2 h-4 w-4" /> Issue Book
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Issue Book to Member</DialogTitle>
+                  <DialogDescription>Select a book and a member to record a new loan.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="issue-book">Select Book</Label>
+                    <Select value={issueData.bookId} onValueChange={(val) => setIssueData({...issueData, bookId: val})}>
+                      <SelectTrigger id="issue-book">
+                        <SelectValue placeholder="Search by title or barcode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {books.map(book => (
+                          <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
+                            {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="issue-member">Select Member</Label>
+                    <Select value={issueData.memberId} onValueChange={(val) => setIssueData({...issueData, memberId: val})}>
+                      <SelectTrigger id="issue-member">
+                        <SelectValue placeholder="Search by name or ID" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {members.filter(m => m.status === 'active').map(member => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name} ({member.member_id})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setIsIssuingBook(false)}>Cancel</Button>
+                  <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Confirm Loan</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={isAddingMember} onOpenChange={setIsAddingMember}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/5">
