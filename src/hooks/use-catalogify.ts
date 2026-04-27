@@ -19,7 +19,7 @@ export function useCatalogify() {
 
   const login = (email: string, role: 'admin' | 'user') => {
     // Restrict librarian to only one specific master account
-    if (role === 'admin' && email.toLowerCase() !== 'admin@adsalibrary.com') {
+    if (role === 'admin' && email.toLowerCase() !== 'librarian@adsalibrary.com') {
       return false;
     }
 
