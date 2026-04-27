@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-library",
+      "description": "A modern, spacious library with rows of books and comfortable seating.",
+      "imageUrl": "https://picsum.photos/seed/library1/1200/600",
+      "imageHint": "modern library"
+    },
+    {
+      "id": "book-stack",
+      "description": "An aesthetic stack of hardcover books on a wooden table.",
+      "imageUrl": "https://picsum.photos/seed/books/600/400",
+      "imageHint": "stack of books"
+    },
+    {
+      "id": "reading-nook",
+      "description": "A cozy reading corner with a soft lamp and a comfortable chair.",
+      "imageUrl": "https://picsum.photos/seed/reading/600/400",
+      "imageHint": "reading nook"
+    }
+  ]
 }
