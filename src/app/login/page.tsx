@@ -42,8 +42,8 @@ export default function LoginPage() {
       toast({
         title: "Authentication Failed",
         description: role === 'user' 
-          ? "Please check your Name and Member Code. (Try: Alice Johnson / LIB001)"
-          : "Invalid email or password.",
+          ? "Check Name/Code. (Try: Alice Johnson / LIB001)"
+          : "Invalid credentials. (Try: librarian@adsalibrary.com)",
         variant: "destructive"
       });
     }
@@ -110,22 +110,17 @@ export default function LoginPage() {
 
               <TabsContent value="admin" className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Librarian Email</Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="admin@adsalibrary.com" 
+                    placeholder="librarian@adsalibrary.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Button variant="link" className="p-0 h-auto text-xs font-medium text-primary">
-                      Forgot password?
-                    </Button>
-                  </div>
+                  <Label htmlFor="password">Password</Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
@@ -150,12 +145,13 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Need Help?
+                  Credentials
                 </span>
               </div>
             </div>
             <p className="text-center text-sm text-muted-foreground">
-              New member? Contact the help desk to register and receive your Member Code.
+              Member: Alice Johnson / LIB001<br/>
+              Librarian: librarian@adsalibrary.com
             </p>
           </CardFooter>
         </Card>
