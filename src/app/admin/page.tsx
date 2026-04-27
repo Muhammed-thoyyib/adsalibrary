@@ -73,9 +73,7 @@ export default function AdminDashboard() {
 
   const [newMember, setNewMember] = useState({
     name: '',
-    email: '',
     member_id: '',
-    phone: '',
     role: 'user' as 'user' | 'admin',
     status: 'active' as 'active' | 'suspended'
   });
@@ -148,7 +146,7 @@ export default function AdminDashboard() {
     }
     addMember(newMember);
     setIsAddingMember(false);
-    setNewMember({ name: '', email: '', member_id: '', phone: '', role: 'user', status: 'active' });
+    setNewMember({ name: '', member_id: '', role: 'user', status: 'active' });
     toast({ title: "Member Registered", description: `Member ${newMember.name} has been added to ADSALIBRARY.` });
   };
 
@@ -182,7 +180,7 @@ export default function AdminDashboard() {
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Register New Member</DialogTitle>
-                  <DialogDescription>Create a new member profile for the library.</DialogDescription>
+                  <DialogDescription>Create a new member profile using Name and Member ID.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
@@ -201,25 +199,6 @@ export default function AdminDashboard() {
                       placeholder="e.g. LIB005" 
                       value={newMember.member_id} 
                       onChange={e => setNewMember({...newMember, member_id: e.target.value.toUpperCase()})} 
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="mem-email">Email</Label>
-                    <Input 
-                      id="mem-email" 
-                      type="email" 
-                      placeholder="john@example.com"
-                      value={newMember.email} 
-                      onChange={e => setNewMember({...newMember, email: e.target.value})} 
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="mem-phone">Phone</Label>
-                    <Input 
-                      id="mem-phone" 
-                      placeholder="555-0000"
-                      value={newMember.phone} 
-                      onChange={e => setNewMember({...newMember, phone: e.target.value})} 
                     />
                   </div>
                 </div>
@@ -451,7 +430,7 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name & Contact</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Member ID</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
@@ -463,7 +442,7 @@ export default function AdminDashboard() {
                       <TableRow key={member.id}>
                         <TableCell>
                           <div className="font-medium">{member.name}</div>
-                          <div className="text-xs text-muted-foreground">{member.email || member.phone}</div>
+                          {member.email && <div className="text-xs text-muted-foreground">{member.email}</div>}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-mono">{member.member_id}</Badge>

@@ -15,9 +15,9 @@ export type Book = {
 export type Member = {
   id: string;
   name: string;
-  email: string;
+  email?: string;
   member_id: string;
-  phone: string;
+  phone?: string;
   role: 'admin' | 'user';
   status: 'active' | 'suspended';
 };

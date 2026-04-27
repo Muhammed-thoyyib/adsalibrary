@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Navbar } from '@/components/navbar';
@@ -54,16 +53,18 @@ export default function ProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 <h2 className="text-2xl font-headline font-bold">{currentUser.name}</h2>
-                <p className="text-muted-foreground text-sm mb-6">{currentUser.email}</p>
+                {currentUser.email && <p className="text-muted-foreground text-sm mb-6">{currentUser.email}</p>}
                 <div className="w-full space-y-3 pt-6 border-t text-left">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Member ID:</span>
                     <span className="font-medium">{currentUser.member_id}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Phone:</span>
-                    <span className="font-medium">{currentUser.phone}</span>
-                  </div>
+                  {currentUser.phone && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Phone:</span>
+                      <span className="font-medium">{currentUser.phone}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Status:</span>
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0 h-5">Active</Badge>
@@ -76,7 +77,7 @@ export default function ProfilePage() {
               <Card className="bg-primary text-primary-foreground">
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="p-2 bg-white/10 rounded-lg">
-                    <Book className="h-5 w-5" />
+                    < Book className="h-5 w-5" />
                   </div>
                   <div>
                     <p className="text-xs opacity-80 uppercase font-semibold">Currently Borrowed</p>
