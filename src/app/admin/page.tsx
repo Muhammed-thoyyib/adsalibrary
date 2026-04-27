@@ -261,7 +261,7 @@ export default function AdminDashboard() {
                 </div>
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => setIsIssuingBook(false)}>Cancel</Button>
-                  <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Confirm Loan</Button>
+                  <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Save</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
                 </div>
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => setIsAddingMember(false)}>Cancel</Button>
-                  <Button className="bg-primary text-white" onClick={handleAddMemberSubmit}>Register Member</Button>
+                  <Button className="bg-primary text-white" onClick={handleAddMemberSubmit}>Save</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
                 </div>
                 <DialogFooter>
                   <Button variant="ghost" onClick={() => setIsAddingBook(false)}>Cancel</Button>
-                  <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save Book</Button>
+                  <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
