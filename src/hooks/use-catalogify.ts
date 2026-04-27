@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -17,7 +18,12 @@ export function useCatalogify() {
   }, []);
 
   const login = (email: string, role: 'admin' | 'user') => {
-    const user = members.find(m => m.email === email && m.role === role) || {
+    // Restrict librarian to only one specific master account
+    if (role === 'admin' && email.toLowerCase() !== 'admin@adsalibrary.com') {
+      return false;
+    }
+
+    const user = members.find(m => m.email.toLowerCase() === email.toLowerCase() && m.role === role) || {
       id: Math.random().toString(),
       name: email.split('@')[0],
       email,
@@ -29,6 +35,7 @@ export function useCatalogify() {
     
     setCurrentUser(user);
     localStorage.setItem('adsalibrary_user', JSON.stringify(user));
+    return true;
   };
 
   const logout = () => {

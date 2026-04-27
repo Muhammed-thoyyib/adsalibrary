@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -10,16 +11,30 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Library, ShieldCheck, User } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
   const { login } = useCatalogify();
+  const { toast } = useToast();
 
   const handleLogin = (role: 'admin' | 'user') => {
-    login(email || (role === 'admin' ? 'admin@adsaibrary.com' : 'user@example.com'), role);
-    router.push(role === 'admin' ? '/admin' : '/profile');
+    const loginEmail = email || (role === 'admin' ? 'admin@adsalibrary.com' : 'user@example.com');
+    const success = login(loginEmail, role);
+    
+    if (success) {
+      router.push(role === 'admin' ? '/admin' : '/profile');
+    } else {
+      toast({
+        title: "Access Denied",
+        description: role === 'admin' 
+          ? "Librarian access is restricted to the master account (admin@adsalibrary.com)." 
+          : "Login failed. Please check your credentials.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -59,6 +74,12 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
+                  {/* Hint for librarian login */}
+                  <TabsContent value="admin">
+                    <p className="text-[10px] text-muted-foreground mt-1 italic">
+                      Librarian master account: admin@adsalibrary.com
+                    </p>
+                  </TabsContent>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
