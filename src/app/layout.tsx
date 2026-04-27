@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'BiblioHub - Smart Library Management',
+  title: 'ADSAIBRARY - Smart Library Management',
   description: 'A modern platform to discover, borrow, and manage library resources.',
 };
 

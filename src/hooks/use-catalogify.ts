@@ -10,7 +10,7 @@ export function useCatalogify() {
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('bibliohub_user');
+    const storedUser = localStorage.getItem('adsaibrary_user');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
@@ -28,12 +28,12 @@ export function useCatalogify() {
     } as Member;
     
     setCurrentUser(user);
-    localStorage.setItem('bibliohub_user', JSON.stringify(user));
+    localStorage.setItem('adsaibrary_user', JSON.stringify(user));
   };
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('bibliohub_user');
+    localStorage.removeItem('adsaibrary_user');
   };
 
   const addBook = (book: Omit<Book, 'id'>) => {
