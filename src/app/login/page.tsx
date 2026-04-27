@@ -21,17 +21,15 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   const handleLogin = (role: 'admin' | 'user') => {
-    const loginEmail = email || (role === 'admin' ? 'librarian@adsalibrary.com' : 'user@example.com');
+    const loginEmail = email || (role === 'admin' ? 'admin@adsalibrary.com' : 'user@example.com');
     const success = login(loginEmail, role);
     
     if (success) {
       router.push(role === 'admin' ? '/admin' : '/profile');
     } else {
       toast({
-        title: "Access Denied",
-        description: role === 'admin' 
-          ? "Librarian access is restricted to the master account (librarian@adsalibrary.com)." 
-          : "Login failed. Please check your credentials.",
+        title: "Login Failed",
+        description: "Please check your credentials and try again.",
         variant: "destructive"
       });
     }
@@ -74,12 +72,6 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                  {/* Hint for librarian login */}
-                  <TabsContent value="admin">
-                    <p className="text-[10px] text-muted-foreground mt-1 italic">
-                      Librarian master account: librarian@adsalibrary.com
-                    </p>
-                  </TabsContent>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

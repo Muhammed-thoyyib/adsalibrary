@@ -18,11 +18,6 @@ export function useCatalogify() {
   }, []);
 
   const login = (email: string, role: 'admin' | 'user') => {
-    // Restrict librarian to only one specific master account
-    if (role === 'admin' && email.toLowerCase() !== 'librarian@adsalibrary.com') {
-      return false;
-    }
-
     const user = members.find(m => m.email.toLowerCase() === email.toLowerCase() && m.role === role) || {
       id: Math.random().toString(),
       name: email.split('@')[0],
