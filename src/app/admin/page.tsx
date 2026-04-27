@@ -149,7 +149,7 @@ export default function AdminDashboard() {
     addMember(newMember);
     setIsAddingMember(false);
     setNewMember({ name: '', email: '', member_id: '', phone: '', role: 'user', status: 'active' });
-    toast({ title: "Member Added", description: "The new member has been registered." });
+    toast({ title: "Member Registered", description: `Member ${newMember.name} has been added to ADSALIBRARY.` });
   };
 
   const filteredBooks = books.filter(b => 
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-headline font-bold text-primary">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage library assets, members, and tracking.</p>
+            <p className="text-muted-foreground">Manage ADSALIBRARY assets, members, and tracking.</p>
           </div>
           <div className="flex gap-2">
             <Dialog open={isAddingMember} onOpenChange={setIsAddingMember}>
@@ -187,19 +187,40 @@ export default function AdminDashboard() {
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="mem-name">Full Name</Label>
-                    <Input id="mem-name" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
+                    <Input 
+                      id="mem-name" 
+                      placeholder="e.g. John Doe"
+                      value={newMember.name} 
+                      onChange={e => setNewMember({...newMember, name: e.target.value})} 
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="mem-id">Member ID / Code</Label>
-                    <Input id="mem-id" placeholder="e.g. LIB005" value={newMember.member_id} onChange={e => setNewMember({...newMember, member_id: e.target.value})} />
+                    <Input 
+                      id="mem-id" 
+                      placeholder="e.g. LIB005" 
+                      value={newMember.member_id} 
+                      onChange={e => setNewMember({...newMember, member_id: e.target.value.toUpperCase()})} 
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="mem-email">Email</Label>
-                    <Input id="mem-email" type="email" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} />
+                    <Input 
+                      id="mem-email" 
+                      type="email" 
+                      placeholder="john@example.com"
+                      value={newMember.email} 
+                      onChange={e => setNewMember({...newMember, email: e.target.value})} 
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="mem-phone">Phone</Label>
-                    <Input id="mem-phone" value={newMember.phone} onChange={e => setNewMember({...newMember, phone: e.target.value})} />
+                    <Input 
+                      id="mem-phone" 
+                      placeholder="555-0000"
+                      value={newMember.phone} 
+                      onChange={e => setNewMember({...newMember, phone: e.target.value})} 
+                    />
                   </div>
                 </div>
                 <DialogFooter>
@@ -240,7 +261,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="barcode">Barcode</Label>
-                      <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value})} />
+                      <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value.toUpperCase()})} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -352,7 +373,7 @@ export default function AdminDashboard() {
               <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="font-headline text-xl">Book Inventory</CardTitle>
-                  <CardDescription>Manage your library's physical and digital collection.</CardDescription>
+                  <CardDescription>Manage ADSALIBRARY's physical and digital collection.</CardDescription>
                 </div>
                 <div className="relative w-full md:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -474,7 +495,7 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
-                <CardDescription>Real-time log of all book circulations.</CardDescription>
+                <CardDescription>Real-time log of all book circulations at ADSALIBRARY.</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>

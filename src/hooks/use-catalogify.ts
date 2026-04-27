@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -28,14 +27,12 @@ export function useCatalogify() {
     let user: Member | undefined;
 
     if (role === 'user') {
-      // Find member by name and code (Member ID)
       user = members.find(m => 
         m.name.toLowerCase() === creds.name?.toLowerCase() && 
         m.member_id.toUpperCase() === creds.code?.toUpperCase() &&
         m.role === 'user'
       );
     } else {
-      // Find librarian by email
       user = members.find(m => 
         m.email.toLowerCase() === creds.email?.toLowerCase() && 
         m.role === 'admin'
@@ -125,7 +122,6 @@ export function useCatalogify() {
     addMember,
     deleteMember,
     issueBook,
-    returnBook,
-    setMembers
+    returnBook
   };
 }
