@@ -16,7 +16,10 @@ import {
   Sparkles,
   Clock,
   UserPlus,
-  Barcode
+  Barcode,
+  Eye,
+  History,
+  Calendar
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,6 +45,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
 import { useToast } from '@/hooks/use-toast';
+import { Member } from '@/lib/mock-data';
 
 export default function AdminDashboard() {
   const { 
@@ -59,6 +63,7 @@ export default function AdminDashboard() {
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [isAddingBook, setIsAddingBook] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
   
   const [newBook, setNewBook] = useState({
     title: '',
@@ -160,6 +165,11 @@ export default function AdminDashboard() {
     m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
     m.member_id.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
+
+  // Helper for Member Detail View
+  const getMemberTransactions = (memberId: string) => {
+    return transactions.filter(t => t.member_id === memberId);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -331,7 +341,7 @@ export default function AdminDashboard() {
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-destructive">2</p>
+                <p className="text-2xl font-bold text-destructive">0</p>
               </div>
               <div className="p-3 bg-destructive/10 rounded-xl">
                 <AlertCircle className="h-6 w-6 text-destructive" />
@@ -457,7 +467,85 @@ export default function AdminDashboard() {
                             {member.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-1">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => setViewingMember(member)}>
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="text-2xl font-headline">Member Profile: {member.name}</DialogTitle>
+                                <DialogDescription>Viewing activity and status for {member.member_id}</DialogDescription>
+                              </DialogHeader>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
+                                <div className="space-y-4">
+                                  <div className="p-4 bg-secondary/30 rounded-xl border">
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                      <Users className="h-4 w-4" /> Personal Information
+                                    </h4>
+                                    <div className="space-y-2 text-sm">
+                                      <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge>{member.status}</Badge></div>
+                                      <div className="flex justify-between"><span className="text-muted-foreground">ID Code</span><span className="font-mono">{member.member_id}</span></div>
+                                      <div className="flex justify-between"><span className="text-muted-foreground">Role</span><span className="capitalize">{member.role}</span></div>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                      <ArrowLeftRight className="h-4 w-4" /> Circulation Stats
+                                    </h4>
+                                    {(() => {
+                                      const mTrans = getMemberTransactions(member.id);
+                                      return (
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div className="bg-white p-3 rounded-lg border text-center">
+                                            <p className="text-xs text-muted-foreground">Active</p>
+                                            <p className="text-xl font-bold">{mTrans.filter(t => t.status === 'issued').length}</p>
+                                          </div>
+                                          <div className="bg-white p-3 rounded-lg border text-center">
+                                            <p className="text-xs text-muted-foreground">Lifetime</p>
+                                            <p className="text-xl font-bold">{mTrans.length}</p>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                                    <History className="h-4 w-4" /> Activity History
+                                  </h4>
+                                  <div className="space-y-2">
+                                    {getMemberTransactions(member.id).length > 0 ? (
+                                      getMemberTransactions(member.id).map(t => {
+                                        const book = books.find(b => b.id === t.book_id);
+                                        return (
+                                          <div key={t.id} className="flex items-start justify-between p-3 border rounded-lg text-sm bg-card hover:bg-accent/5 transition-colors">
+                                            <div className="flex flex-col">
+                                              <span className="font-medium">{book?.title || 'Unknown Book'}</span>
+                                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" /> Issued: {t.issue_date}
+                                              </span>
+                                            </div>
+                                            <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
+                                              {t.status}
+                                            </Badge>
+                                          </div>
+                                        );
+                                      })
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground italic text-center py-8">No transaction history available.</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          
                           <Button variant="ghost" size="icon" onClick={() => deleteMember(member.id)} disabled={member.role === 'admin' && members.filter(m => m.role === 'admin').length <= 1}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
