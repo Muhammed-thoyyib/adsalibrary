@@ -11,7 +11,7 @@ export type LoginCredentials = {
 };
 
 const LOAN_DAYS = 14; // 2 weeks
-const FINE_PER_DAY = 10;
+const FINE_PER_DAY = 15; // Updated fine to ₹15
 
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
