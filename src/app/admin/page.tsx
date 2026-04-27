@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/navbar';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,7 +66,8 @@ export default function AdminDashboard() {
     addMember, 
     deleteMember, 
     returnBook,
-    issueBook 
+    issueBook,
+    calculateFine
   } = useCatalogify();
   
   const [bookSearchQuery, setBookSearchQuery] = useState('');
@@ -202,6 +203,12 @@ export default function AdminDashboard() {
     m.member_id.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
 
+  const overdueCount = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return transactions.filter(t => t.status === 'issued' && new Date(t.due_date) < today).length;
+  }, [transactions]);
+
   const getMemberTransactions = (memberId: string) => {
     return transactions.filter(t => t.member_id === memberId);
   };
@@ -225,7 +232,7 @@ export default function AdminDashboard() {
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Issue Book to Member</DialogTitle>
-                  <DialogDescription>Select a book and a member to record a new loan.</DialogDescription>
+                  <DialogDescription>Select a book and a member to record a new loan (2-week period).</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
@@ -426,7 +433,7 @@ export default function AdminDashboard() {
             <CardContent className="pt-6 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-destructive">0</p>
+                <p className={`text-2xl font-bold ${overdueCount > 0 ? 'text-destructive' : ''}`}>{overdueCount}</p>
               </div>
               <div className="p-3 bg-destructive/10 rounded-xl">
                 <AlertCircle className="h-6 w-6 text-destructive" />
@@ -608,13 +615,22 @@ export default function AdminDashboard() {
                                     {getMemberTransactions(member.id).length > 0 ? (
                                       getMemberTransactions(member.id).map(t => {
                                         const book = books.find(b => b.id === t.book_id);
+                                        const fine = calculateFine(t.due_date, t.return_date);
+                                        const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
+                                        
                                         return (
                                           <div key={t.id} className="flex items-start justify-between p-3 border rounded-lg text-sm bg-card hover:bg-accent/5 transition-colors">
-                                            <div className="flex flex-col">
+                                            <div className="flex flex-col gap-1">
                                               <span className="font-medium">{book?.title || 'Unknown Book'}</span>
-                                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                <Calendar className="h-3 w-3" /> Issued: {t.issue_date}
-                                              </span>
+                                              <div className="flex flex-col text-[10px] text-muted-foreground space-y-0.5">
+                                                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Issued: {t.issue_date}</span>
+                                                <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive font-bold' : ''}`}>
+                                                  <Clock className="h-3 w-3" /> Due: {t.due_date}
+                                                </span>
+                                              </div>
+                                              {fine > 0 && (
+                                                <Badge variant="destructive" className="w-fit text-[9px] py-0">Fine: ₹{fine}</Badge>
+                                              )}
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
                                               <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
@@ -677,12 +693,13 @@ export default function AdminDashboard() {
                     {transactions.map(t => {
                       const book = books.find(b => b.id === t.book_id);
                       const member = members.find(m => m.id === t.member_id);
+                      const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
                       return (
                         <TableRow key={t.id}>
                           <TableCell className="font-medium max-w-[200px] truncate">{book?.title || 'Unknown'}</TableCell>
                           <TableCell>{member?.name || 'Unknown'}</TableCell>
                           <TableCell className="text-xs">{t.issue_date}</TableCell>
-                          <TableCell className="text-xs">{t.due_date}</TableCell>
+                          <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>{t.due_date}</TableCell>
                           <TableCell>
                             <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit text-[10px] uppercase tracking-tighter">
                               {t.status === 'returned' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}

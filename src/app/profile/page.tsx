@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Book, Clock, History, AlertCircle } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { currentUser, transactions, books } = useCatalogify();
+  const { currentUser, transactions, books, calculateFine } = useCatalogify();
 
   if (!currentUser) {
     return (
@@ -59,12 +59,6 @@ export default function ProfilePage() {
                     <span className="text-muted-foreground">Member ID:</span>
                     <span className="font-medium">{currentUser.member_id}</span>
                   </div>
-                  {currentUser.phone && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Phone:</span>
-                      <span className="font-medium">{currentUser.phone}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Status:</span>
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0 h-5">Active</Badge>
@@ -105,7 +99,7 @@ export default function ProfilePage() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="font-headline">Current Borrowings</CardTitle>
-                  <CardDescription>Books currently in your possession.</CardDescription>
+                  <CardDescription>Books currently in your possession (2-week loan limit).</CardDescription>
                 </div>
                 <Clock className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
@@ -124,6 +118,7 @@ export default function ProfilePage() {
                       {activeBorrowed.map(t => {
                         const book = books.find(b => b.id === t.book_id);
                         const isOverdue = new Date(t.due_date) < new Date();
+                        const fine = calculateFine(t.due_date);
                         return (
                           <TableRow key={t.id}>
                             <TableCell className="font-medium">{book?.title}</TableCell>
@@ -132,7 +127,9 @@ export default function ProfilePage() {
                               {t.due_date}
                               {isOverdue && <span className="ml-2 text-xs">(Overdue)</span>}
                             </TableCell>
-                            <TableCell>₹0.00</TableCell>
+                            <TableCell className={fine > 0 ? 'text-destructive font-bold' : ''}>
+                              ₹{fine.toFixed(2)}
+                            </TableCell>
                           </TableRow>
                         );
                       })}
@@ -159,17 +156,22 @@ export default function ProfilePage() {
                         <TableHead>Book Title</TableHead>
                         <TableHead>Returned On</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Paid Fine</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {pastBorrowed.map(t => {
                         const book = books.find(b => b.id === t.book_id);
+                        const fine = calculateFine(t.due_date, t.return_date);
                         return (
                           <TableRow key={t.id}>
                             <TableCell className="font-medium text-muted-foreground">{book?.title}</TableCell>
                             <TableCell className="text-muted-foreground">{t.return_date}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Returned</Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {fine > 0 ? `₹${fine.toFixed(2)}` : 'None'}
                             </TableCell>
                           </TableRow>
                         );

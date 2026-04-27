@@ -10,6 +10,9 @@ export type LoginCredentials = {
   code?: string;
 };
 
+const LOAN_DAYS = 14; // 2 weeks
+const FINE_PER_DAY = 10;
+
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
   const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
@@ -77,16 +80,35 @@ export function useCatalogify() {
     setMembers(prev => prev.filter(m => m.id !== id));
   };
 
+  const calculateFine = (dueDate: string, returnDate?: string) => {
+    const targetDate = returnDate ? new Date(returnDate) : new Date();
+    const due = new Date(dueDate);
+    
+    // Normalize dates to midnight for calculation
+    targetDate.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+
+    if (targetDate <= due) return 0;
+
+    const diffTime = Math.abs(targetDate.getTime() - due.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays * FINE_PER_DAY;
+  };
+
   const issueBook = (bookId: string, memberId: string) => {
     const book = books.find(b => b.id === bookId);
     if (!book || book.available_copies <= 0) return false;
+
+    const today = new Date();
+    const dueDate = new Date(today);
+    dueDate.setDate(today.getDate() + LOAN_DAYS);
 
     const newTransaction: Transaction = {
       id: Math.random().toString(),
       book_id: bookId,
       member_id: memberId,
-      issue_date: new Date().toISOString().split('T')[0],
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      issue_date: today.toISOString().split('T')[0],
+      due_date: dueDate.toISOString().split('T')[0],
       status: 'issued'
     };
 
@@ -99,8 +121,10 @@ export function useCatalogify() {
     const transaction = transactions.find(t => t.id === transactionId);
     if (!transaction || transaction.status === 'returned') return;
 
+    const returnDate = new Date().toISOString().split('T')[0];
+    
     setTransactions(prev => prev.map(t => 
-      t.id === transactionId ? { ...t, status: 'returned', return_date: new Date().toISOString().split('T')[0] } : t
+      t.id === transactionId ? { ...t, status: 'returned', return_date: returnDate } : t
     ));
 
     const book = books.find(b => b.id === transaction.book_id);
@@ -122,6 +146,7 @@ export function useCatalogify() {
     addMember,
     deleteMember,
     issueBook,
-    returnBook
+    returnBook,
+    calculateFine
   };
 }
