@@ -1,10 +1,9 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Catalogify - Smart Library Management',
+  title: 'BiblioHub - Smart Library Management',
   description: 'A modern platform to discover, borrow, and manage library resources.',
 };
 

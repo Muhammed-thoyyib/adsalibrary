@@ -1,4 +1,3 @@
-
 export type Book = {
   id: string;
   title: string;
@@ -84,7 +83,7 @@ export const INITIAL_MEMBERS: Member[] = [
   {
     id: 'm2',
     name: 'Bob Librarian',
-    email: 'admin@catalogify.com',
+    email: 'admin@bibliohub.com',
     member_id: 'ADM001',
     phone: '555-0202',
     role: 'admin',

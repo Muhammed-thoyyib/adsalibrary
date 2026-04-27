@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -19,7 +18,7 @@ export default function LoginPage() {
   const { login } = useCatalogify();
 
   const handleLogin = (role: 'admin' | 'user') => {
-    login(email || (role === 'admin' ? 'admin@catalogify.com' : 'user@example.com'), role);
+    login(email || (role === 'admin' ? 'admin@bibliohub.com' : 'user@example.com'), role);
     router.push(role === 'admin' ? '/admin' : '/profile');
   };
 

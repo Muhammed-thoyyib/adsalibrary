@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -10,9 +9,8 @@ export function useCatalogify() {
   const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
 
-  // Persistence simulation (optional for dev)
   useEffect(() => {
-    const storedUser = localStorage.getItem('catalogify_user');
+    const storedUser = localStorage.getItem('bibliohub_user');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
     }
@@ -30,12 +28,12 @@ export function useCatalogify() {
     } as Member;
     
     setCurrentUser(user);
-    localStorage.setItem('catalogify_user', JSON.stringify(user));
+    localStorage.setItem('bibliohub_user', JSON.stringify(user));
   };
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('catalogify_user');
+    localStorage.removeItem('bibliohub_user');
   };
 
   const addBook = (book: Omit<Book, 'id'>) => {
