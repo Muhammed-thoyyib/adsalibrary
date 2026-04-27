@@ -10,33 +10,47 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useCatalogify } from '@/hooks/use-catalogify';
-import { Library, ShieldCheck, User } from 'lucide-react';
+import { Library, ShieldCheck, User, KeyRound, Fingerprint } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [memberName, setMemberName] = useState('');
+  const [memberCode, setMemberCode] = useState('');
+  
   const router = useRouter();
   const { login } = useCatalogify();
   const { toast } = useToast();
 
   const handleLogin = (role: 'admin' | 'user') => {
-    const loginEmail = email || (role === 'admin' ? 'admin@adsalibrary.com' : 'user@example.com');
-    const success = login(loginEmail, role);
+    let success = false;
+    
+    if (role === 'user') {
+      success = login('user', { name: memberName, code: memberCode });
+    } else {
+      success = login('admin', { email, password });
+    }
     
     if (success) {
       router.push(role === 'admin' ? '/admin' : '/profile');
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${role === 'admin' ? 'Librarian' : memberName}!`,
+      });
     } else {
       toast({
-        title: "Login Failed",
-        description: "Please check your credentials and try again.",
+        title: "Authentication Failed",
+        description: role === 'user' 
+          ? "Please check your Name and Member Code. (Try: Alice Johnson / LIB001)"
+          : "Invalid email or password.",
         variant: "destructive"
       });
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary">
@@ -46,9 +60,9 @@ export default function LoginPage() {
                 <Library className="h-8 w-8 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-headline">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-headline font-bold">ADSALIBRARY Portal</CardTitle>
             <CardDescription>
-              Sign in to manage your library resources
+              Sign in to access your library account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -62,13 +76,45 @@ export default function LoginPage() {
                 </TabsTrigger>
               </TabsList>
               
-              <div className="space-y-4">
+              <TabsContent value="user" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="memberName">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="memberName" 
+                      placeholder="e.g. Alice Johnson" 
+                      className="pl-10"
+                      value={memberName}
+                      onChange={(e) => setMemberName(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="memberCode">Member Code</Label>
+                  <div className="relative">
+                    <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="memberCode" 
+                      placeholder="e.g. LIB001" 
+                      className="pl-10"
+                      value={memberCode}
+                      onChange={(e) => setMemberCode(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Button className="w-full mt-4 bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handleLogin('user')}>
+                  Sign in as Member
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="admin" className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="name@example.com" 
+                    placeholder="admin@adsalibrary.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -80,22 +126,18 @@ export default function LoginPage() {
                       Forgot password?
                     </Button>
                   </div>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      className="pl-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
-
-              <TabsContent value="user" className="mt-6">
-                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handleLogin('user')}>
-                  Sign in as Member
-                </Button>
-              </TabsContent>
-              <TabsContent value="admin" className="mt-6">
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleLogin('admin')}>
+                <Button className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => handleLogin('admin')}>
                   Sign in as Librarian
                 </Button>
               </TabsContent>
@@ -108,19 +150,12 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  Need Help?
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full">Google</Button>
-              <Button variant="outline" className="w-full">Github</Button>
-            </div>
             <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <Button variant="link" className="p-0 h-auto text-primary font-medium">
-                Sign up
-              </Button>
+              New member? Contact the help desk to register and receive your Member Code.
             </p>
           </CardFooter>
         </Card>
