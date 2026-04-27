@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -12,13 +11,12 @@ import {
   ArrowLeftRight, 
   AlertCircle,
   Search,
-  MoreVertical,
-  Edit,
   Trash2,
   CheckCircle2,
   Sparkles,
   Clock,
-  UserPlus
+  UserPlus,
+  Barcode
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -54,7 +52,6 @@ export default function AdminDashboard() {
     deleteBook, 
     addMember, 
     deleteMember, 
-    issueBook, 
     returnBook 
   } = useCatalogify();
   
@@ -67,6 +64,7 @@ export default function AdminDashboard() {
     title: '',
     author: '',
     isbn: '',
+    barcode: '',
     category: '',
     total_copies: 1,
     location: '',
@@ -122,10 +120,15 @@ export default function AdminDashboard() {
   };
 
   const handleAddBookSubmit = () => {
+    if (!newBook.title || !newBook.barcode) {
+      toast({ title: "Error", description: "Title and Barcode are required.", variant: "destructive" });
+      return;
+    }
     addBook({
       title: newBook.title,
       author: newBook.author,
       isbn: newBook.isbn,
+      barcode: newBook.barcode,
       category: newBook.category || 'Fiction',
       total_copies: newBook.total_copies,
       available_copies: newBook.total_copies,
@@ -134,7 +137,7 @@ export default function AdminDashboard() {
       keyThemes: (newBook as any).keyThemes
     });
     setIsAddingBook(false);
-    setNewBook({ title: '', author: '', isbn: '', category: '', total_copies: 1, location: '', description: '' });
+    setNewBook({ title: '', author: '', isbn: '', barcode: '', category: '', total_copies: 1, location: '', description: '' });
     toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
   };
 
@@ -151,7 +154,8 @@ export default function AdminDashboard() {
 
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
-    b.author.toLowerCase().includes(bookSearchQuery.toLowerCase())
+    b.author.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
+    b.barcode.toLowerCase().includes(bookSearchQuery.toLowerCase())
   );
 
   const filteredMembers = members.filter(m => 
@@ -235,19 +239,23 @@ export default function AdminDashboard() {
                       <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="category">Category</Label>
-                      <Input id="category" value={newBook.category} onChange={e => setNewBook({...newBook, category: e.target.value})} />
+                      <Label htmlFor="barcode">Barcode</Label>
+                      <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value})} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Input id="category" value={newBook.category} onChange={e => setNewBook({...newBook, category: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="copies">Total Copies</Label>
                       <Input id="copies" type="number" value={newBook.total_copies} onChange={e => setNewBook({...newBook, total_copies: parseInt(e.target.value)})} />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location (Shelf)</Label>
-                      <Input id="location" value={newBook.location} onChange={e => setNewBook({...newBook, location: e.target.value})} />
-                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location (Shelf)</Label>
+                    <Input id="location" value={newBook.location} onChange={e => setNewBook({...newBook, location: e.target.value})} />
                   </div>
                   <div className="space-y-2 border-t pt-4">
                     <Label className="flex items-center gap-2 font-semibold">
@@ -349,7 +357,7 @@ export default function AdminDashboard() {
                 <div className="relative w-full md:w-72">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
-                    placeholder="Search books..." 
+                    placeholder="Search title, barcode..." 
                     className="pl-9" 
                     value={bookSearchQuery}
                     onChange={e => setBookSearchQuery(e.target.value)}
@@ -360,7 +368,8 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Title & Author</TableHead>
+                      <TableHead>Title & Barcode</TableHead>
+                      <TableHead>Author</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Availability</TableHead>
                       <TableHead>Location</TableHead>
@@ -372,8 +381,11 @@ export default function AdminDashboard() {
                       <TableRow key={book.id}>
                         <TableCell>
                           <div className="font-medium">{book.title}</div>
-                          <div className="text-xs text-muted-foreground">{book.author}</div>
+                          <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase">
+                            <Barcode className="h-3 w-3" /> {book.barcode}
+                          </div>
                         </TableCell>
+                        <TableCell className="text-sm">{book.author}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="font-normal">{book.category}</Badge>
                         </TableCell>

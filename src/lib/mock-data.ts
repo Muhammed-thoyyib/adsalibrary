@@ -1,9 +1,9 @@
-
 export type Book = {
   id: string;
   title: string;
   author: string;
   isbn: string;
+  barcode: string;
   category: string;
   total_copies: number;
   available_copies: number;
@@ -38,6 +38,7 @@ export const INITIAL_BOOKS: Book[] = [
     title: 'The Great Gatsby',
     author: 'F. Scott Fitzgerald',
     isbn: '978-0743273565',
+    barcode: 'ADS-B001',
     category: 'Fiction',
     total_copies: 5,
     available_copies: 3,
@@ -50,6 +51,7 @@ export const INITIAL_BOOKS: Book[] = [
     title: 'Clean Code',
     author: 'Robert C. Martin',
     isbn: '978-0132350884',
+    barcode: 'ADS-B002',
     category: 'Technology',
     total_copies: 3,
     available_copies: 1,
@@ -62,6 +64,7 @@ export const INITIAL_BOOKS: Book[] = [
     title: 'Thinking, Fast and Slow',
     author: 'Daniel Kahneman',
     isbn: '978-0374275631',
+    barcode: 'ADS-B003',
     category: 'Psychology',
     total_copies: 4,
     available_copies: 4,

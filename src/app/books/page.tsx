@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -15,7 +14,8 @@ import {
   Tag, 
   CheckCircle2, 
   XCircle,
-  Sparkles
+  Sparkles,
+  Barcode
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -44,6 +44,7 @@ export default function CatalogPage() {
   const filteredBooks = books.filter(book => {
     const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         book.barcode.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          book.isbn.includes(searchQuery);
     const matchesCategory = selectedCategory ? book.category === selectedCategory : true;
     return matchesSearch && matchesCategory;
@@ -92,7 +93,7 @@ export default function CatalogPage() {
                 <Search className="h-4 w-4" /> Search
               </h3>
               <Input 
-                placeholder="Title, author, ISBN..." 
+                placeholder="Title, author, barcode..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -151,7 +152,7 @@ export default function CatalogPage() {
                           <DialogHeader>
                             <div className="flex items-center gap-2 mb-2">
                               <Badge variant="outline" className="text-accent border-accent">{book.category}</Badge>
-                              <Badge variant="outline">{book.isbn}</Badge>
+                              <Badge variant="outline" className="flex items-center gap-1 font-mono uppercase text-[10px]"><Barcode className="h-3 w-3" /> {book.barcode}</Badge>
                             </div>
                             <DialogTitle className="text-3xl font-headline font-bold">{book.title}</DialogTitle>
                             <p className="text-lg text-muted-foreground">By {book.author}</p>
@@ -176,7 +177,7 @@ export default function CatalogPage() {
                             ) : (
                               <p className="text-muted-foreground italic">No detailed summary available for this book yet.</p>
                             )}
-                            <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                            <div className="grid grid-cols-3 gap-4 border-t pt-4">
                               <div className="flex items-center gap-3">
                                 <MapPin className="h-5 w-5 text-muted-foreground" />
                                 <div>
@@ -189,6 +190,13 @@ export default function CatalogPage() {
                                 <div>
                                   <p className="text-xs text-muted-foreground">Available</p>
                                   <p className="text-sm font-medium">{book.available_copies} of {book.total_copies}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <Tag className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <p className="text-xs text-muted-foreground">ISBN</p>
+                                  <p className="text-sm font-medium">{book.isbn}</p>
                                 </div>
                               </div>
                             </div>
@@ -210,8 +218,8 @@ export default function CatalogPage() {
                       {book.summary || "Explore the details of this masterpiece through our digital catalog."}
                     </CardContent>
                     <CardFooter className="p-6 border-t flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-xs font-medium">
-                        <MapPin className="h-3.5 w-3.5" /> {book.location}
+                      <div className="flex items-center gap-1.5 text-xs font-medium uppercase font-mono text-muted-foreground">
+                        <Barcode className="h-3 w-3" /> {book.barcode}
                       </div>
                       <Button 
                         size="sm" 
@@ -237,7 +245,13 @@ export default function CatalogPage() {
                         </div>
                         <div>
                           <h3 className="font-headline font-semibold group-hover:text-primary transition-colors">{book.title}</h3>
-                          <p className="text-sm text-muted-foreground">{book.author} • {book.category}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{book.author}</span>
+                            <span>•</span>
+                            <span>{book.category}</span>
+                            <span>•</span>
+                            <span className="font-mono uppercase flex items-center gap-0.5"><Barcode className="h-3 w-3" /> {book.barcode}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-8">
