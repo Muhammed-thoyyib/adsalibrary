@@ -20,7 +20,8 @@ import {
   Eye,
   History,
   Calendar,
-  HandHelping
+  HandHelping,
+  Undo2
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -183,6 +184,11 @@ export default function AdminDashboard() {
     } else {
       toast({ title: "Error", description: "Could not issue book. Check availability.", variant: "destructive" });
     }
+  };
+
+  const handleReturn = (transactionId: string) => {
+    returnBook(transactionId);
+    toast({ title: "Book Returned", description: "The book has been marked as returned and inventory updated." });
   };
 
   const filteredBooks = books.filter(b => 
@@ -610,9 +616,21 @@ export default function AdminDashboard() {
                                                 <Calendar className="h-3 w-3" /> Issued: {t.issue_date}
                                               </span>
                                             </div>
-                                            <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
-                                              {t.status}
-                                            </Badge>
+                                            <div className="flex flex-col items-end gap-2">
+                                              <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
+                                                {t.status}
+                                              </Badge>
+                                              {t.status === 'issued' && (
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="sm" 
+                                                  className="h-7 text-xs text-accent flex items-center gap-1 hover:bg-accent/10"
+                                                  onClick={() => handleReturn(t.id)}
+                                                >
+                                                  <Undo2 className="h-3 w-3" /> Process Return
+                                                </Button>
+                                              )}
+                                            </div>
                                           </div>
                                         );
                                       })
@@ -673,7 +691,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             {t.status === 'issued' && (
-                              <Button size="sm" onClick={() => returnBook(t.id)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                              <Button size="sm" onClick={() => handleReturn(t.id)} className="bg-accent text-accent-foreground hover:bg-accent/90">
                                 Return
                               </Button>
                             )}
