@@ -30,6 +30,7 @@ export type Transaction = {
   due_date: string;
   return_date?: string;
   status: 'issued' | 'returned';
+  waive_fine?: boolean;
 };
 
 export const INITIAL_BOOKS: Book[] = [

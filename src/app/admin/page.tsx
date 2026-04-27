@@ -21,7 +21,8 @@ import {
   History,
   Calendar,
   HandHelping,
-  Undo2
+  Undo2,
+  ShieldAlert
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,9 +53,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
 import { useToast } from '@/hooks/use-toast';
-import { Member } from '@/lib/mock-data';
+import { Member, Transaction } from '@/lib/mock-data';
 
 export default function AdminDashboard() {
   const { 
@@ -76,6 +78,9 @@ export default function AdminDashboard() {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isIssuingBook, setIsIssuingBook] = useState(false);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
+  
+  const [returningTransaction, setReturningTransaction] = useState<Transaction | null>(null);
+  const [shouldWaiveFine, setShouldWaiveFine] = useState(false);
   
   const [newBook, setNewBook] = useState({
     title: '',
@@ -187,9 +192,20 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReturn = (transactionId: string) => {
-    returnBook(transactionId);
-    toast({ title: "Book Returned", description: "The book has been marked as returned and inventory updated." });
+  const handleReturnConfirm = () => {
+    if (!returningTransaction) return;
+    returnBook(returningTransaction.id, shouldWaiveFine);
+    toast({ 
+      title: "Book Returned", 
+      description: shouldWaiveFine ? "The book has been returned and fine was waived." : "The book has been marked as returned." 
+    });
+    setReturningTransaction(null);
+    setShouldWaiveFine(false);
+  };
+
+  const initiateReturn = (transaction: Transaction) => {
+    setReturningTransaction(transaction);
+    setShouldWaiveFine(false);
   };
 
   const filteredBooks = books.filter(b => 
@@ -394,6 +410,54 @@ export default function AdminDashboard() {
             </Dialog>
           </div>
         </header>
+
+        {/* Return Confirmation Dialog */}
+        <Dialog open={!!returningTransaction} onOpenChange={(open) => !open && setReturningTransaction(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Undo2 className="h-5 w-5 text-accent" /> Confirm Return
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to mark this book as returned?
+              </DialogDescription>
+            </DialogHeader>
+            {returningTransaction && (
+              <div className="py-4 space-y-4">
+                <div className="p-3 bg-secondary/30 rounded-lg text-sm">
+                  <p className="font-semibold">{books.find(b => b.id === returningTransaction.book_id)?.title}</p>
+                  <p className="text-xs text-muted-foreground">Issued to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
+                </div>
+                
+                {calculateFine(returningTransaction.due_date) > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+                      <ShieldAlert className="h-4 w-4 shrink-0" />
+                      <div className="text-xs">
+                        <p className="font-bold">Overdue detected!</p>
+                        <p>Fine amount: ₹{calculateFine(returningTransaction.due_date)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="waive-fine" 
+                        checked={shouldWaiveFine} 
+                        onCheckedChange={(checked) => setShouldWaiveFine(!!checked)}
+                      />
+                      <Label htmlFor="waive-fine" className="text-sm font-medium leading-none cursor-pointer">
+                        Waive this fine
+                      </Label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setReturningTransaction(null)}>Cancel</Button>
+              <Button className="bg-primary text-white" onClick={handleReturnConfirm}>Confirm Return</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="hover:border-primary/50 transition-colors shadow-sm">
@@ -615,7 +679,7 @@ export default function AdminDashboard() {
                                     {getMemberTransactions(member.id).length > 0 ? (
                                       getMemberTransactions(member.id).map(t => {
                                         const book = books.find(b => b.id === t.book_id);
-                                        const fine = calculateFine(t.due_date, t.return_date);
+                                        const fine = calculateFine(t.due_date, t.return_date, t.waive_fine);
                                         const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
                                         
                                         return (
@@ -631,6 +695,9 @@ export default function AdminDashboard() {
                                               {fine > 0 && (
                                                 <Badge variant="destructive" className="w-fit text-[9px] py-0">Fine: ₹{fine}</Badge>
                                               )}
+                                              {t.waive_fine && (
+                                                <Badge variant="outline" className="w-fit text-[9px] py-0 border-accent text-accent">Fine Waived</Badge>
+                                              )}
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
                                               <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
@@ -641,7 +708,7 @@ export default function AdminDashboard() {
                                                   variant="ghost" 
                                                   size="sm" 
                                                   className="h-7 text-xs text-accent flex items-center gap-1 hover:bg-accent/10"
-                                                  onClick={() => handleReturn(t.id)}
+                                                  onClick={() => initiateReturn(t)}
                                                 >
                                                   <Undo2 className="h-3 w-3" /> Process Return
                                                 </Button>
@@ -708,7 +775,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             {t.status === 'issued' && (
-                              <Button size="sm" onClick={() => handleReturn(t.id)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                              <Button size="sm" onClick={() => initiateReturn(t)} className="bg-accent text-accent-foreground hover:bg-accent/90">
                                 Return
                               </Button>
                             )}

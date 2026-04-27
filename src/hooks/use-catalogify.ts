@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -81,7 +80,9 @@ export function useCatalogify() {
     setMembers(prev => prev.filter(m => m.id !== id));
   };
 
-  const calculateFine = (dueDate: string, returnDate?: string) => {
+  const calculateFine = (dueDate: string, returnDate?: string, isWaived: boolean = false) => {
+    if (isWaived) return 0;
+    
     const targetDate = returnDate ? new Date(returnDate) : new Date();
     const due = new Date(dueDate);
     
@@ -118,14 +119,14 @@ export function useCatalogify() {
     return true;
   };
 
-  const returnBook = (transactionId: string) => {
+  const returnBook = (transactionId: string, waiveFine: boolean = false) => {
     const transaction = transactions.find(t => t.id === transactionId);
     if (!transaction || transaction.status === 'returned') return;
 
     const returnDate = new Date().toISOString().split('T')[0];
     
     setTransactions(prev => prev.map(t => 
-      t.id === transactionId ? { ...t, status: 'returned', return_date: returnDate } : t
+      t.id === transactionId ? { ...t, status: 'returned', return_date: returnDate, waive_fine: waiveFine } : t
     ));
 
     const book = books.find(b => b.id === transaction.book_id);

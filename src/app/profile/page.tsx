@@ -118,7 +118,7 @@ export default function ProfilePage() {
                       {activeBorrowed.map(t => {
                         const book = books.find(b => b.id === t.book_id);
                         const isOverdue = new Date(t.due_date) < new Date();
-                        const fine = calculateFine(t.due_date);
+                        const fine = calculateFine(t.due_date, undefined, t.waive_fine);
                         return (
                           <TableRow key={t.id}>
                             <TableCell className="font-medium">{book?.title}</TableCell>
@@ -162,13 +162,16 @@ export default function ProfilePage() {
                     <TableBody>
                       {pastBorrowed.map(t => {
                         const book = books.find(b => b.id === t.book_id);
-                        const fine = calculateFine(t.due_date, t.return_date);
+                        const fine = calculateFine(t.due_date, t.return_date, t.waive_fine);
                         return (
                           <TableRow key={t.id}>
                             <TableCell className="font-medium text-muted-foreground">{book?.title}</TableCell>
                             <TableCell className="text-muted-foreground">{t.return_date}</TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Returned</Badge>
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 w-fit">Returned</Badge>
+                                {t.waive_fine && <span className="text-[10px] text-accent font-medium">Fine Waived</span>}
+                              </div>
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground">
                               {fine > 0 ? `₹${fine.toFixed(2)}` : 'None'}
