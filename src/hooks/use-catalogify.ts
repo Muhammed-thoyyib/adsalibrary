@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -11,7 +12,7 @@ export type LoginCredentials = {
 };
 
 const LOAN_DAYS = 14; // 2 weeks
-const FINE_PER_DAY = 15; // Updated fine to ₹15
+const FLAT_OVERDUE_FINE = 15; // Updated to a flat fine of ₹15
 
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
@@ -88,11 +89,11 @@ export function useCatalogify() {
     targetDate.setHours(0, 0, 0, 0);
     due.setHours(0, 0, 0, 0);
 
+    // If the book is not overdue, there is no fine
     if (targetDate <= due) return 0;
 
-    const diffTime = Math.abs(targetDate.getTime() - due.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays * FINE_PER_DAY;
+    // Return the flat overdue fine
+    return FLAT_OVERDUE_FINE;
   };
 
   const issueBook = (bookId: string, memberId: string) => {
