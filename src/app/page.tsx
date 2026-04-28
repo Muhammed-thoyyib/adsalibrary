@@ -31,6 +31,9 @@ export default function Home() {
           )}
           <div className="container px-4 md:px-6 relative mx-auto text-center">
             <div className="flex flex-col items-center space-y-4 text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/30 text-accent text-xs font-bold uppercase tracking-widest mb-2 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                <Library className="h-3 w-3" /> ADSALIBRARY
+              </div>
               <h1 className="text-4xl font-headline font-bold tracking-tighter sm:text-5xl md:text-6xl text-white">
                 Discover Your Next <span className="text-accent">Great Read</span>
               </h1>
