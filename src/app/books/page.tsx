@@ -153,7 +153,14 @@ export default function CatalogPage() {
                             <h3 className="text-xl font-headline font-bold leading-tight group-hover:text-primary transition-colors cursor-pointer">{book.title}</h3>
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white">
-                            <DialogHeader className="p-6 border-b bg-white">
+                            <div className="absolute left-6 top-6 z-10">
+                              <DialogClose asChild>
+                                <Button variant="ghost" size="sm" className="h-8 gap-1.5 font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors">
+                                  <ArrowLeft className="h-4 w-4" /> Back
+                                </Button>
+                              </DialogClose>
+                            </div>
+                            <DialogHeader className="p-6 pt-16 border-b bg-white">
                               <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="secondary" className="bg-primary/10 text-primary border-none">{book.category}</Badge>
                                 <Badge variant="outline" className="flex items-center gap-1 font-mono uppercase text-[10px] text-muted-foreground border-muted/30"><Barcode className="h-3 w-3" /> {book.barcode}</Badge>
