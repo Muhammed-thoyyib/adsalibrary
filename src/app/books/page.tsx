@@ -16,7 +16,8 @@ import {
   CheckCircle2, 
   XCircle,
   Sparkles,
-  Barcode
+  Barcode,
+  ArrowLeft
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -28,6 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 
 export default function CatalogPage() {
@@ -205,6 +207,11 @@ export default function CatalogPage() {
                                 </div>
                               </div>
                               <div className="flex justify-end gap-3 pt-4 border-t">
+                                <DialogClose asChild>
+                                  <Button variant="ghost">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Catalog
+                                  </Button>
+                                </DialogClose>
                                 <Button 
                                   className="bg-accent text-accent-foreground hover:bg-accent/90"
                                   disabled={book.available_copies <= 0}
