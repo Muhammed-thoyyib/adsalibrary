@@ -259,7 +259,7 @@ export default function AdminDashboard() {
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="issue-book">Select Book</Label>
+                      <Label htmlFor="issue-book">Search Book</Label>
                       <Select value={issueData.bookId} onValueChange={(val) => setIssueData({...issueData, bookId: val})}>
                         <SelectTrigger id="issue-book">
                           <SelectValue placeholder="Search by title or barcode" />
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="issue-member">Select Member</Label>
+                      <Label htmlFor="issue-member">Search Member</Label>
                       <Select value={issueData.memberId} onValueChange={(val) => setIssueData({...issueData, memberId: val})}>
                         <SelectTrigger id="issue-member">
                           <SelectValue placeholder="Search by name or ID" />
