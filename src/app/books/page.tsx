@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -149,14 +150,14 @@ export default function CatalogPage() {
                           <DialogTrigger asChild>
                             <h3 className="text-xl font-headline font-bold leading-tight group-hover:text-primary transition-colors cursor-pointer">{book.title}</h3>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl p-0 overflow-hidden">
-                            <DialogHeader className="bg-primary p-6">
+                          <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white">
+                            <DialogHeader className="p-6 border-b bg-white">
                               <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="outline" className="text-white border-white/40">{book.category}</Badge>
-                                <Badge variant="outline" className="flex items-center gap-1 font-mono uppercase text-[10px] text-white/80 border-white/20"><Barcode className="h-3 w-3" /> {book.barcode}</Badge>
+                                <Badge variant="secondary" className="bg-primary/10 text-primary border-none">{book.category}</Badge>
+                                <Badge variant="outline" className="flex items-center gap-1 font-mono uppercase text-[10px] text-muted-foreground border-muted/30"><Barcode className="h-3 w-3" /> {book.barcode}</Badge>
                               </div>
-                              <DialogTitle className="text-3xl font-headline font-bold text-white">{book.title}</DialogTitle>
-                              <p className="text-lg text-white/90 font-medium">By {book.author}</p>
+                              <DialogTitle className="text-3xl font-headline font-bold text-primary">{book.title}</DialogTitle>
+                              <p className="text-lg text-muted-foreground font-medium">By {book.author}</p>
                             </DialogHeader>
                             <div className="p-6">
                               <div className="grid gap-6 py-4">
