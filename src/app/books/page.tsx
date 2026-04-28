@@ -155,8 +155,8 @@ export default function CatalogPage() {
                                 <Badge variant="outline" className="text-accent border-accent">{book.category}</Badge>
                                 <Badge variant="outline" className="flex items-center gap-1 font-mono uppercase text-[10px]"><Barcode className="h-3 w-3" /> {book.barcode}</Badge>
                               </div>
-                              <DialogTitle className="text-3xl font-headline font-bold">{book.title}</DialogTitle>
-                              <p className="text-lg text-muted-foreground">By {book.author}</p>
+                              <DialogTitle className="text-3xl font-headline font-bold text-accent">{book.title}</DialogTitle>
+                              <p className="text-lg text-accent/80 font-medium">By {book.author}</p>
                             </DialogHeader>
                             <div className="grid gap-6 py-4">
                               {book.summary ? (
