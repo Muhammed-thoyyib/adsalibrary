@@ -219,11 +219,13 @@ export default function AdminDashboard() {
     m.member_id.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
 
-  const overdueCount = useMemo(() => {
+  const overdueTransactions = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return transactions.filter(t => t.status === 'issued' && new Date(t.due_date) < today).length;
+    return transactions.filter(t => t.status === 'issued' && new Date(t.due_date) < today);
   }, [transactions]);
+
+  const overdueCount = overdueTransactions.length;
 
   const getMemberTransactions = (memberId: string) => {
     return transactions.filter(t => t.member_id === memberId);
@@ -510,6 +512,9 @@ export default function AdminDashboard() {
           <TabsList className="mb-6 bg-secondary/50 p-1">
             <TabsTrigger value="books">Inventory</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="overdue">
+              Overdue {overdueCount > 0 && <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">{overdueCount}</Badge>}
+            </TabsTrigger>
             <TabsTrigger value="transactions">History</TabsTrigger>
           </TabsList>
           
@@ -732,6 +737,71 @@ export default function AdminDashboard() {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="overdue">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-headline text-xl text-destructive">Overdue Books</CardTitle>
+                <CardDescription>Track books that have passed their 14-day loan limit.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Book & Barcode</TableHead>
+                      <TableHead>Issued To</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Current Fine</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {overdueTransactions.length > 0 ? (
+                      overdueTransactions.map(t => {
+                        const book = books.find(b => b.id === t.book_id);
+                        const member = members.find(m => m.id === t.member_id);
+                        const fine = calculateFine(t.due_date);
+                        return (
+                          <TableRow key={t.id} className="bg-destructive/5">
+                            <TableCell>
+                              <div className="font-medium">{book?.title || 'Unknown'}</div>
+                              <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.barcode}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">{member?.name || 'Unknown'}</div>
+                              <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
+                            </TableCell>
+                            <TableCell className="text-destructive font-bold text-sm">
+                              {t.due_date}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="destructive" className="font-bold">₹{fine}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                onClick={() => initiateReturn(t)}
+                                className="flex items-center gap-1"
+                              >
+                                <Undo2 className="h-3 w-3" /> Return
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
+                          No overdue books found. Catalog is up to date!
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
