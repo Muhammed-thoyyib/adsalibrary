@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/navbar';
+import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -50,9 +49,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <div className="flex-1 flex items-center justify-center p-4">
+    <div className="flex-1 flex flex-col bg-background h-screen overflow-hidden">
+      <Header />
+      <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
         <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary">
           <CardHeader className="space-y-1 text-center">
             <div className="flex justify-center mb-4">

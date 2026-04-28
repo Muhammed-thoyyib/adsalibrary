@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Navbar } from '@/components/navbar';
+import { Header } from '@/components/header';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -236,633 +236,635 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
-        <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-headline font-bold text-primary">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage ADSALIBRARY assets, members, and tracking.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Dialog open={isIssuingBook} onOpenChange={setIsIssuingBook}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="border-accent text-accent hover:bg-accent/5">
-                  <HandHelping className="mr-2 h-4 w-4" /> Issue Book
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Issue Book to Member</DialogTitle>
-                  <DialogDescription>Select a book and a member to record a new loan (2-week period).</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="issue-book">Select Book</Label>
-                    <Select value={issueData.bookId} onValueChange={(val) => setIssueData({...issueData, bookId: val})}>
-                      <SelectTrigger id="issue-book">
-                        <SelectValue placeholder="Search by title or barcode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {books.map(book => (
-                          <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
-                            {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+    <div className="flex-1 flex flex-col bg-background h-screen overflow-hidden">
+      <Header />
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-headline font-bold text-primary">Admin Dashboard</h1>
+              <p className="text-muted-foreground">Manage ADSALIBRARY assets, members, and tracking.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Dialog open={isIssuingBook} onOpenChange={setIsIssuingBook}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-accent text-accent hover:bg-accent/5">
+                    <HandHelping className="mr-2 h-4 w-4" /> Issue Book
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Issue Book to Member</DialogTitle>
+                    <DialogDescription>Select a book and a member to record a new loan (2-week period).</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="issue-book">Select Book</Label>
+                      <Select value={issueData.bookId} onValueChange={(val) => setIssueData({...issueData, bookId: val})}>
+                        <SelectTrigger id="issue-book">
+                          <SelectValue placeholder="Search by title or barcode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {books.map(book => (
+                            <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
+                              {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="issue-member">Select Member</Label>
+                      <Select value={issueData.memberId} onValueChange={(val) => setIssueData({...issueData, memberId: val})}>
+                        <SelectTrigger id="issue-member">
+                          <SelectValue placeholder="Search by name or ID" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {members.filter(m => m.status === 'active').map(member => (
+                            <SelectItem key={member.id} value={member.id}>
+                              {member.name} ({member.member_id})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="issue-member">Select Member</Label>
-                    <Select value={issueData.memberId} onValueChange={(val) => setIssueData({...issueData, memberId: val})}>
-                      <SelectTrigger id="issue-member">
-                        <SelectValue placeholder="Search by name or ID" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {members.filter(m => m.status === 'active').map(member => (
-                          <SelectItem key={member.id} value={member.id}>
-                            {member.name} ({member.member_id})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsIssuingBook(false)}>Cancel</Button>
-                  <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsIssuingBook(false)}>Cancel</Button>
+                    <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Save</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-            <Dialog open={isAddingMember} onOpenChange={setIsAddingMember}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="border-primary text-primary hover:bg-primary/5">
-                  <UserPlus className="mr-2 h-4 w-4" /> Add Member
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Register New Member</DialogTitle>
-                  <DialogDescription>Create a new member profile using Name and Member ID.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="mem-name">Full Name</Label>
-                    <Input 
-                      id="mem-name" 
-                      placeholder="e.g. John Doe"
-                      value={newMember.name} 
-                      onChange={e => setNewMember({...newMember, name: e.target.value})} 
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="mem-id">Member ID / Code</Label>
-                    <Input 
-                      id="mem-id" 
-                      placeholder="e.g. LIB005" 
-                      value={newMember.member_id} 
-                      onChange={e => setNewMember({...newMember, member_id: e.target.value.toUpperCase()})} 
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsAddingMember(false)}>Cancel</Button>
-                  <Button className="bg-primary text-white" onClick={handleAddMemberSubmit}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isAddingBook} onOpenChange={setIsAddingBook}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
-                  <Plus className="mr-2 h-4 w-4" /> Add New Book
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="font-headline text-2xl">Add Library Book</DialogTitle>
-                  <DialogDescription>
-                    Enter the book details. Use our AI assistant to enrich your catalog.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Title</Label>
-                      <Input id="title" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="author">Author</Label>
-                      <Input id="author" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="isbn">ISBN</Label>
-                      <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="barcode">Barcode</Label>
-                      <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value.toUpperCase()})} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Category</Label>
-                      <Input id="category" value={newBook.category} onChange={e => setNewBook({...newBook, category: e.target.value})} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="copies">Total Copies</Label>
-                      <Input id="copies" type="number" value={newBook.total_copies} onChange={e => setNewBook({...newBook, total_copies: parseInt(e.target.value)})} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location (Shelf)</Label>
-                    <Input id="location" value={newBook.location} onChange={e => setNewBook({...newBook, location: e.target.value})} />
-                  </div>
-                  <div className="space-y-2 border-t pt-4">
-                    <Label className="flex items-center gap-2 font-semibold">
-                      AI Insight Tool <Sparkles className="h-4 w-4 text-accent" />
-                    </Label>
-                    <DialogDescription className="pb-2">Provide a short book description to generate a summary and themes automatically.</DialogDescription>
-                    <textarea 
-                      className="w-full min-h-[100px] p-3 text-sm border rounded-md focus:ring-2 focus:ring-primary/20 outline-none" 
-                      placeholder="Enter book description/blurb here..."
-                      value={newBook.description}
-                      onChange={e => setNewBook({...newBook, description: e.target.value})}
-                    />
-                    <Button 
-                      variant="outline" 
-                      className="w-full border-accent text-accent hover:bg-accent/10"
-                      onClick={handleAiSummary}
-                      disabled={aiLoading}
-                    >
-                      {aiLoading ? "Generating..." : "Generate AI Insights"}
-                    </Button>
-                    {(newBook as any).summary && (
-                      <div className="mt-4 p-4 bg-accent/5 rounded-xl border border-accent/20">
-                        <p className="text-xs font-bold uppercase text-accent mb-2 tracking-wider">Generated Summary</p>
-                        <p className="text-sm leading-relaxed text-foreground/90">{(newBook as any).summary}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setIsAddingBook(false)}>Cancel</Button>
-                  <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </header>
-
-        {/* Return Confirmation Dialog */}
-        <Dialog open={!!returningTransaction} onOpenChange={(open) => !open && setReturningTransaction(null)}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Undo2 className="h-5 w-5 text-accent" /> Confirm Return
-              </DialogTitle>
-              <DialogDescription>
-                Are you sure you want to mark this book as returned?
-              </DialogDescription>
-            </DialogHeader>
-            {returningTransaction && (
-              <div className="py-4 space-y-4">
-                <div className="p-3 bg-secondary/30 rounded-lg text-sm">
-                  <p className="font-semibold">{books.find(b => b.id === returningTransaction.book_id)?.title}</p>
-                  <p className="text-xs text-muted-foreground">Issued to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
-                </div>
-                
-                {calculateFine(returningTransaction.due_date) > 0 && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
-                      <ShieldAlert className="h-4 w-4 shrink-0" />
-                      <div className="text-xs">
-                        <p className="font-bold">Overdue detected!</p>
-                        <p>Fine amount: ₹{calculateFine(returningTransaction.due_date)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="waive-fine" 
-                        checked={shouldWaiveFine} 
-                        onCheckedChange={(checked) => setShouldWaiveFine(!!checked)}
+              <Dialog open={isAddingMember} onOpenChange={setIsAddingMember}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-primary text-primary hover:bg-primary/5">
+                    <UserPlus className="mr-2 h-4 w-4" /> Add Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Register New Member</DialogTitle>
+                    <DialogDescription>Create a new member profile using Name and Member ID.</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="mem-name">Full Name</Label>
+                      <Input 
+                        id="mem-name" 
+                        placeholder="e.g. John Doe"
+                        value={newMember.name} 
+                        onChange={e => setNewMember({...newMember, name: e.target.value})} 
                       />
-                      <Label htmlFor="waive-fine" className="text-sm font-medium leading-none cursor-pointer">
-                        Waive this fine
-                      </Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="mem-id">Member ID / Code</Label>
+                      <Input 
+                        id="mem-id" 
+                        placeholder="e.g. LIB005" 
+                        value={newMember.member_id} 
+                        onChange={e => setNewMember({...newMember, member_id: e.target.value.toUpperCase()})} 
+                      />
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setReturningTransaction(null)}>Cancel</Button>
-              <Button className="bg-primary text-white" onClick={handleReturnConfirm}>Confirm Return</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsAddingMember(false)}>Cancel</Button>
+                    <Button className="bg-primary text-white" onClick={handleAddMemberSubmit}>Save</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="hover:border-primary/50 transition-colors shadow-sm">
-            <CardContent className="pt-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Books</p>
-                <p className="text-2xl font-bold">{books.length}</p>
-              </div>
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <BookOpen className="h-6 w-6 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:border-accent/50 transition-colors shadow-sm">
-            <CardContent className="pt-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Members</p>
-                <p className="text-2xl font-bold">{members.length}</p>
-              </div>
-              <div className="p-3 bg-accent/10 rounded-xl">
-                <Users className="h-6 w-6 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:border-primary/50 transition-colors shadow-sm">
-            <CardContent className="pt-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Issues</p>
-                <p className="text-2xl font-bold">{activeTransactions.length}</p>
-              </div>
-              <div className="p-3 bg-primary/10 rounded-xl">
-                <ArrowLeftRight className="h-6 w-6 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="hover:border-destructive/50 transition-colors shadow-sm">
-            <CardContent className="pt-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-                <p className={`text-2xl font-bold ${overdueCount > 0 ? 'text-destructive' : ''}`}>{overdueCount}</p>
-              </div>
-              <div className="p-3 bg-destructive/10 rounded-xl">
-                <AlertCircle className="h-6 w-6 text-destructive" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Dialog open={isAddingBook} onOpenChange={setIsAddingBook}>
+                <DialogTrigger asChild>
+                  <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
+                    <Plus className="mr-2 h-4 w-4" /> Add New Book
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="font-headline text-2xl">Add Library Book</DialogTitle>
+                    <DialogDescription>
+                      Enter the book details. Use our AI assistant to enrich your catalog.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Title</Label>
+                        <Input id="title" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="author">Author</Label>
+                        <Input id="author" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="isbn">ISBN</Label>
+                        <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="barcode">Barcode</Label>
+                        <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value.toUpperCase()})} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="category">Category</Label>
+                        <Input id="category" value={newBook.category} onChange={e => setNewBook({...newBook, category: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="copies">Total Copies</Label>
+                        <Input id="copies" type="number" value={newBook.total_copies} onChange={e => setNewBook({...newBook, total_copies: parseInt(e.target.value)})} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location (Shelf)</Label>
+                      <Input id="location" value={newBook.location} onChange={e => setNewBook({...newBook, location: e.target.value})} />
+                    </div>
+                    <div className="space-y-2 border-t pt-4">
+                      <Label className="flex items-center gap-2 font-semibold">
+                        AI Insight Tool <Sparkles className="h-4 w-4 text-accent" />
+                      </Label>
+                      <DialogDescription className="pb-2">Provide a short book description to generate a summary and themes automatically.</DialogDescription>
+                      <textarea 
+                        className="w-full min-h-[100px] p-3 text-sm border rounded-md focus:ring-2 focus:ring-primary/20 outline-none" 
+                        placeholder="Enter book description/blurb here..."
+                        value={newBook.description}
+                        onChange={e => setNewBook({...newBook, description: e.target.value})}
+                      />
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-accent text-accent hover:bg-accent/10"
+                        onClick={handleAiSummary}
+                        disabled={aiLoading}
+                      >
+                        {aiLoading ? "Generating..." : "Generate AI Insights"}
+                      </Button>
+                      {(newBook as any).summary && (
+                        <div className="mt-4 p-4 bg-accent/5 rounded-xl border border-accent/20">
+                          <p className="text-xs font-bold uppercase text-accent mb-2 tracking-wider">Generated Summary</p>
+                          <p className="text-sm leading-relaxed text-foreground/90">{(newBook as any).summary}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsAddingBook(false)}>Cancel</Button>
+                    <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </header>
 
-        <Tabs defaultValue="books" className="w-full">
-          <TabsList className="mb-6 bg-secondary/50 p-1">
-            <TabsTrigger value="books">Inventory</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="overdue">
-              Overdue {overdueCount > 0 && <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">{overdueCount}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="transactions">History</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="books">
-            <Card>
-              <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Return Confirmation Dialog */}
+          <Dialog open={!!returningTransaction} onOpenChange={(open) => !open && setReturningTransaction(null)}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Undo2 className="h-5 w-5 text-accent" /> Confirm Return
+                </DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to mark this book as returned?
+                </DialogDescription>
+              </DialogHeader>
+              {returningTransaction && (
+                <div className="py-4 space-y-4">
+                  <div className="p-3 bg-secondary/30 rounded-lg text-sm">
+                    <p className="font-semibold">{books.find(b => b.id === returningTransaction.book_id)?.title}</p>
+                    <p className="text-xs text-muted-foreground">Issued to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
+                  </div>
+                  
+                  {calculateFine(returningTransaction.due_date) > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
+                        <ShieldAlert className="h-4 w-4 shrink-0" />
+                        <div className="text-xs">
+                          <p className="font-bold">Overdue detected!</p>
+                          <p>Fine amount: ₹{calculateFine(returningTransaction.due_date)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="waive-fine" 
+                          checked={shouldWaiveFine} 
+                          onCheckedChange={(checked) => setShouldWaiveFine(!!checked)}
+                        />
+                        <Label htmlFor="waive-fine" className="text-sm font-medium leading-none cursor-pointer">
+                          Waive this fine
+                        </Label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setReturningTransaction(null)}>Cancel</Button>
+                <Button className="bg-primary text-white" onClick={handleReturnConfirm}>Confirm Return</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="hover:border-primary/50 transition-colors shadow-sm">
+              <CardContent className="pt-6 flex items-center justify-between">
                 <div>
-                  <CardTitle className="font-headline text-xl">Book Inventory</CardTitle>
-                  <CardDescription>Manage ADSALIBRARY's physical and digital collection.</CardDescription>
+                  <p className="text-sm font-medium text-muted-foreground">Total Books</p>
+                  <p className="text-2xl font-bold">{books.length}</p>
                 </div>
-                <div className="relative w-full md:w-72">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search title, barcode..." 
-                    className="pl-9" 
-                    value={bookSearchQuery}
-                    onChange={e => setBookSearchQuery(e.target.value)}
-                  />
+                <div className="p-3 bg-primary/10 rounded-xl">
+                  <BookOpen className="h-6 w-6 text-primary" />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title & Barcode</TableHead>
-                      <TableHead>Author</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Availability</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBooks.map(book => (
-                      <TableRow key={book.id}>
-                        <TableCell>
-                          <div className="font-medium">{book.title}</div>
-                          <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase">
-                            <Barcode className="h-3 w-3" /> {book.barcode}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">{book.author}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="font-normal">{book.category}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${book.available_copies > 0 ? 'bg-green-500' : 'bg-destructive'}`} />
-                            <span className="text-sm">{book.available_copies} / {book.total_copies}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{book.location}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => deleteBook(book.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="members">
-            <Card>
-              <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <Card className="hover:border-accent/50 transition-colors shadow-sm">
+              <CardContent className="pt-6 flex items-center justify-between">
                 <div>
-                  <CardTitle className="font-headline text-xl">Member Directory</CardTitle>
-                  <CardDescription>View and manage all registered library members.</CardDescription>
+                  <p className="text-sm font-medium text-muted-foreground">Members</p>
+                  <p className="text-2xl font-bold">{members.length}</p>
                 </div>
-                <div className="relative w-full md:w-72">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search name or ID..." 
-                    className="pl-9" 
-                    value={memberSearchQuery}
-                    onChange={e => setMemberSearchQuery(e.target.value)}
-                  />
+                <div className="p-3 bg-accent/10 rounded-xl">
+                  <Users className="h-6 w-6 text-accent" />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Member ID</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredMembers.map(member => (
-                      <TableRow key={member.id}>
-                        <TableCell>
-                          <div className="font-medium">{member.name}</div>
-                          {member.email && <div className="text-xs text-muted-foreground">{member.email}</div>}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="font-mono">{member.member_id}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="capitalize">
-                            {member.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {member.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right space-x-1">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => setViewingMember(member)}>
-                                <Eye className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle className="text-2xl font-headline">Member Profile: {member.name}</DialogTitle>
-                                <DialogDescription>Viewing activity and status for {member.member_id}</DialogDescription>
-                              </DialogHeader>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
-                                <div className="space-y-4">
-                                  <div className="p-4 bg-secondary/30 rounded-xl border">
-                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                      <Users className="h-4 w-4" /> Personal Information
-                                    </h4>
-                                    <div className="space-y-2 text-sm">
-                                      <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge>{member.status}</Badge></div>
-                                      <div className="flex justify-between"><span className="text-muted-foreground">ID Code</span><span className="font-mono">{member.member_id}</span></div>
-                                      <div className="flex justify-between"><span className="text-muted-foreground">Role</span><span className="capitalize">{member.role}</span></div>
+              </CardContent>
+            </Card>
+            <Card className="hover:border-primary/50 transition-colors shadow-sm">
+              <CardContent className="pt-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active Issues</p>
+                  <p className="text-2xl font-bold">{activeTransactions.length}</p>
+                </div>
+                <div className="p-3 bg-primary/10 rounded-xl">
+                  <ArrowLeftRight className="h-6 w-6 text-primary" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover:border-destructive/50 transition-colors shadow-sm">
+              <CardContent className="pt-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+                  <p className={`text-2xl font-bold ${overdueCount > 0 ? 'text-destructive' : ''}`}>{overdueCount}</p>
+                </div>
+                <div className="p-3 bg-destructive/10 rounded-xl">
+                  <AlertCircle className="h-6 w-6 text-destructive" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Tabs defaultValue="books" className="w-full">
+            <TabsList className="mb-6 bg-secondary/50 p-1">
+              <TabsTrigger value="books">Inventory</TabsTrigger>
+              <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="overdue">
+                Overdue {overdueCount > 0 && <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">{overdueCount}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="transactions">History</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="books">
+              <Card>
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="font-headline text-xl">Book Inventory</CardTitle>
+                    <CardDescription>Manage ADSALIBRARY's physical and digital collection.</CardDescription>
+                  </div>
+                  <div className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search title, barcode..." 
+                      className="pl-9" 
+                      value={bookSearchQuery}
+                      onChange={e => setBookSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title & Barcode</TableHead>
+                        <TableHead>Author</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Availability</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBooks.map(book => (
+                        <TableRow key={book.id}>
+                          <TableCell>
+                            <div className="font-medium">{book.title}</div>
+                            <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase">
+                              <Barcode className="h-3 w-3" /> {book.barcode}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">{book.author}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="font-normal">{book.category}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className={`h-2 w-2 rounded-full ${book.available_copies > 0 ? 'bg-green-500' : 'bg-destructive'}`} />
+                              <span className="text-sm">{book.available_copies} / {book.total_copies}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{book.location}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" onClick={() => deleteBook(book.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="members">
+              <Card>
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="font-headline text-xl">Member Directory</CardTitle>
+                    <CardDescription>View and manage all registered library members.</CardDescription>
+                  </div>
+                  <div className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search name or ID..." 
+                      className="pl-9" 
+                      value={memberSearchQuery}
+                      onChange={e => setMemberSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Member ID</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredMembers.map(member => (
+                        <TableRow key={member.id}>
+                          <TableCell>
+                            <div className="font-medium">{member.name}</div>
+                            {member.email && <div className="text-xs text-muted-foreground">{member.email}</div>}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono">{member.member_id}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="capitalize">
+                              {member.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                              {member.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right space-x-1">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setViewingMember(member)}>
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle className="text-2xl font-headline">Member Profile: {member.name}</DialogTitle>
+                                  <DialogDescription>Viewing activity and status for {member.member_id}</DialogDescription>
+                                </DialogHeader>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
+                                  <div className="space-y-4">
+                                    <div className="p-4 bg-secondary/30 rounded-xl border">
+                                      <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <Users className="h-4 w-4" /> Personal Information
+                                      </h4>
+                                      <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge>{member.status}</Badge></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">ID Code</span><span className="font-mono">{member.member_id}</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Role</span><span className="capitalize">{member.role}</span></div>
+                                      </div>
                                     </div>
-                                  </div>
 
-                                  <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                      <ArrowLeftRight className="h-4 w-4" /> Circulation Stats
-                                    </h4>
-                                    {(() => {
-                                      const mTrans = getMemberTransactions(member.id);
-                                      return (
-                                        <div className="grid grid-cols-2 gap-2">
-                                          <div className="bg-white p-3 rounded-lg border text-center">
-                                            <p className="text-xs text-muted-foreground">Active</p>
-                                            <p className="text-xl font-bold">{mTrans.filter(t => t.status === 'issued').length}</p>
-                                          </div>
-                                          <div className="bg-white p-3 rounded-lg border text-center">
-                                            <p className="text-xs text-muted-foreground">Lifetime</p>
-                                            <p className="text-xl font-bold">{mTrans.length}</p>
-                                          </div>
-                                        </div>
-                                      );
-                                    })()}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                  <h4 className="text-sm font-semibold flex items-center gap-2">
-                                    <History className="h-4 w-4" /> Activity History
-                                  </h4>
-                                  <div className="space-y-2">
-                                    {getMemberTransactions(member.id).length > 0 ? (
-                                      getMemberTransactions(member.id).map(t => {
-                                        const book = books.find(b => b.id === t.book_id);
-                                        const fine = calculateFine(t.due_date, t.return_date, t.waive_fine);
-                                        const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
-                                        
+                                    <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                                      <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <ArrowLeftRight className="h-4 w-4" /> Circulation Stats
+                                      </h4>
+                                      {(() => {
+                                        const mTrans = getMemberTransactions(member.id);
                                         return (
-                                          <div key={t.id} className="flex items-start justify-between p-3 border rounded-lg text-sm bg-card hover:bg-accent/5 transition-colors">
-                                            <div className="flex flex-col gap-1">
-                                              <span className="font-medium">{book?.title || 'Unknown Book'}</span>
-                                              <div className="flex flex-col text-[10px] text-muted-foreground space-y-0.5">
-                                                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Issued: {t.issue_date}</span>
-                                                <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive font-bold' : ''}`}>
-                                                  <Clock className="h-3 w-3" /> Due: {t.due_date}
-                                                </span>
-                                              </div>
-                                              {fine > 0 && (
-                                                <Badge variant="destructive" className="w-fit text-[9px] py-0">Fine: ₹{fine}</Badge>
-                                              )}
-                                              {t.waive_fine && (
-                                                <Badge variant="outline" className="w-fit text-[9px] py-0 border-accent text-accent">Fine Waived</Badge>
-                                              )}
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <div className="bg-white p-3 rounded-lg border text-center">
+                                              <p className="text-xs text-muted-foreground">Active</p>
+                                              <p className="text-xl font-bold">{mTrans.filter(t => t.status === 'issued').length}</p>
                                             </div>
-                                            <div className="flex flex-col items-end gap-2">
-                                              <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
-                                                {t.status}
-                                              </Badge>
-                                              {t.status === 'issued' && (
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="sm" 
-                                                  className="h-7 text-xs text-accent flex items-center gap-1 hover:bg-accent/10"
-                                                  onClick={() => initiateReturn(t)}
-                                                >
-                                                  <Undo2 className="h-3 w-3" /> Process Return
-                                                </Button>
-                                              )}
+                                            <div className="bg-white p-3 rounded-lg border text-center">
+                                              <p className="text-xs text-muted-foreground">Lifetime</p>
+                                              <p className="text-xl font-bold">{mTrans.length}</p>
                                             </div>
                                           </div>
                                         );
-                                      })
-                                    ) : (
-                                      <p className="text-xs text-muted-foreground italic text-center py-8">No transaction history available.</p>
-                                    )}
+                                      })()}
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-4">
+                                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                                      <History className="h-4 w-4" /> Activity History
+                                    </h4>
+                                    <div className="space-y-2">
+                                      {getMemberTransactions(member.id).length > 0 ? (
+                                        getMemberTransactions(member.id).map(t => {
+                                          const book = books.find(b => b.id === t.book_id);
+                                          const fine = calculateFine(t.due_date, t.return_date, t.waive_fine);
+                                          const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
+                                          
+                                          return (
+                                            <div key={t.id} className="flex items-start justify-between p-3 border rounded-lg text-sm bg-card hover:bg-accent/5 transition-colors">
+                                              <div className="flex flex-col gap-1">
+                                                <span className="font-medium">{book?.title || 'Unknown Book'}</span>
+                                                <div className="flex flex-col text-[10px] text-muted-foreground space-y-0.5">
+                                                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Issued: {t.issue_date}</span>
+                                                  <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive font-bold' : ''}`}>
+                                                    <Clock className="h-3 w-3" /> Due: {t.due_date}
+                                                  </span>
+                                                </div>
+                                                {fine > 0 && (
+                                                  <Badge variant="destructive" className="w-fit text-[9px] py-0">Fine: ₹{fine}</Badge>
+                                                )}
+                                                {t.waive_fine && (
+                                                  <Badge variant="outline" className="w-fit text-[9px] py-0 border-accent text-accent">Fine Waived</Badge>
+                                                )}
+                                              </div>
+                                              <div className="flex flex-col items-end gap-2">
+                                                <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
+                                                  {t.status}
+                                                </Badge>
+                                                {t.status === 'issued' && (
+                                                  <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="h-7 text-xs text-accent flex items-center gap-1 hover:bg-accent/10"
+                                                    onClick={() => initiateReturn(t)}
+                                                  >
+                                                    <Undo2 className="h-3 w-3" /> Process Return
+                                                  </Button>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })
+                                      ) : (
+                                        <p className="text-xs text-muted-foreground italic text-center py-8">No transaction history available.</p>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          <Button variant="ghost" size="icon" onClick={() => deleteMember(member.id)} disabled={member.role === 'admin' && members.filter(m => m.role === 'admin').length <= 1}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                              </DialogContent>
+                            </Dialog>
+                            
+                            <Button variant="ghost" size="icon" onClick={() => deleteMember(member.id)} disabled={member.role === 'admin' && members.filter(m => m.role === 'admin').length <= 1}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent value="overdue">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-xl text-destructive">Overdue Books</CardTitle>
-                <CardDescription>Track books that have passed their 14-day loan limit.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Book & Barcode</TableHead>
-                      <TableHead>Issued To</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Current Fine</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {overdueTransactions.length > 0 ? (
-                      overdueTransactions.map(t => {
+            <TabsContent value="overdue">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-headline text-xl text-destructive">Overdue Books</CardTitle>
+                  <CardDescription>Track books that have passed their 14-day loan limit.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Book & Barcode</TableHead>
+                        <TableHead>Issued To</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Current Fine</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {overdueTransactions.length > 0 ? (
+                        overdueTransactions.map(t => {
+                          const book = books.find(b => b.id === t.book_id);
+                          const member = members.find(m => m.id === t.member_id);
+                          const fine = calculateFine(t.due_date);
+                          return (
+                            <TableRow key={t.id} className="bg-destructive/5">
+                              <TableCell>
+                                <div className="font-medium">{book?.title || 'Unknown'}</div>
+                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.barcode}</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">{member?.name || 'Unknown'}</div>
+                                <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
+                              </TableCell>
+                              <TableCell className="text-destructive font-bold text-sm">
+                                {t.due_date}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="destructive" className="font-bold">₹{fine}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive" 
+                                  onClick={() => initiateReturn(t)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Undo2 className="h-3 w-3" /> Return
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
+                            No overdue books found. Catalog is up to date!
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="transactions">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
+                  <CardDescription>Real-time log of all book circulations at ADSALIBRARY.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Book</TableHead>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Issued</TableHead>
+                        <TableHead>Due</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.map(t => {
                         const book = books.find(b => b.id === t.book_id);
                         const member = members.find(m => m.id === t.member_id);
-                        const fine = calculateFine(t.due_date);
+                        const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
                         return (
-                          <TableRow key={t.id} className="bg-destructive/5">
+                          <TableRow key={t.id}>
+                            <TableCell className="font-medium max-w-[200px] truncate">{book?.title || 'Unknown'}</TableCell>
+                            <TableCell>{member?.name || 'Unknown'}</TableCell>
+                            <TableCell className="text-xs">{t.issue_date}</TableCell>
+                            <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>{t.due_date}</TableCell>
                             <TableCell>
-                              <div className="font-medium">{book?.title || 'Unknown'}</div>
-                              <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.barcode}</div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="font-medium">{member?.name || 'Unknown'}</div>
-                              <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
-                            </TableCell>
-                            <TableCell className="text-destructive font-bold text-sm">
-                              {t.due_date}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="destructive" className="font-bold">₹{fine}</Badge>
+                              <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit text-[10px] uppercase tracking-tighter">
+                                {t.status === 'returned' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                                {t.status}
+                              </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button 
-                                size="sm" 
-                                variant="destructive" 
-                                onClick={() => initiateReturn(t)}
-                                className="flex items-center gap-1"
-                              >
-                                <Undo2 className="h-3 w-3" /> Return
-                              </Button>
+                              {t.status === 'issued' && (
+                                <Button size="sm" onClick={() => initiateReturn(t)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                                  Return
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
-                          No overdue books found. Catalog is up to date!
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="transactions">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
-                <CardDescription>Real-time log of all book circulations at ADSALIBRARY.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Book</TableHead>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Issued</TableHead>
-                      <TableHead>Due</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map(t => {
-                      const book = books.find(b => b.id === t.book_id);
-                      const member = members.find(m => m.id === t.member_id);
-                      const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
-                      return (
-                        <TableRow key={t.id}>
-                          <TableCell className="font-medium max-w-[200px] truncate">{book?.title || 'Unknown'}</TableCell>
-                          <TableCell>{member?.name || 'Unknown'}</TableCell>
-                          <TableCell className="text-xs">{t.issue_date}</TableCell>
-                          <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>{t.due_date}</TableCell>
-                          <TableCell>
-                            <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit text-[10px] uppercase tracking-tighter">
-                              {t.status === 'returned' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                              {t.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {t.status === 'issued' && (
-                              <Button size="sm" onClick={() => initiateReturn(t)} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                                Return
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
     </div>
   );
