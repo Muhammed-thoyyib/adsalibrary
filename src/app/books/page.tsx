@@ -149,67 +149,69 @@ export default function CatalogPage() {
                           <DialogTrigger asChild>
                             <h3 className="text-xl font-headline font-bold leading-tight group-hover:text-primary transition-colors cursor-pointer">{book.title}</h3>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
+                          <DialogContent className="max-w-2xl p-0 overflow-hidden">
+                            <DialogHeader className="bg-primary p-6">
                               <div className="flex items-center gap-2 mb-2">
-                                <Badge variant="outline" className="text-accent border-accent">{book.category}</Badge>
-                                <Badge variant="outline" className="flex items-center gap-1 font-mono uppercase text-[10px]"><Barcode className="h-3 w-3" /> {book.barcode}</Badge>
+                                <Badge variant="outline" className="text-white border-white/40">{book.category}</Badge>
+                                <Badge variant="outline" className="flex items-center gap-1 font-mono uppercase text-[10px] text-white/80 border-white/20"><Barcode className="h-3 w-3" /> {book.barcode}</Badge>
                               </div>
-                              <DialogTitle className="text-3xl font-headline font-bold text-accent">{book.title}</DialogTitle>
-                              <p className="text-lg text-accent/80 font-medium">By {book.author}</p>
+                              <DialogTitle className="text-3xl font-headline font-bold text-white">{book.title}</DialogTitle>
+                              <p className="text-lg text-white/90 font-medium">By {book.author}</p>
                             </DialogHeader>
-                            <div className="grid gap-6 py-4">
-                              {book.summary ? (
-                                <div className="space-y-4">
-                                  <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
-                                    <h4 className="flex items-center gap-2 font-headline font-semibold text-primary mb-2">
-                                      <Sparkles className="h-4 w-4" /> AI Summary
-                                    </h4>
-                                    <p className="text-sm leading-relaxed">{book.summary}</p>
-                                  </div>
-                                  {book.keyThemes && (
-                                    <div className="flex flex-wrap gap-2">
-                                      {book.keyThemes.map(theme => (
-                                        <Badge key={theme} variant="secondary" className="bg-accent/10 text-accent-foreground">{theme}</Badge>
-                                      ))}
+                            <div className="p-6">
+                              <div className="grid gap-6 py-4">
+                                {book.summary ? (
+                                  <div className="space-y-4">
+                                    <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                                      <h4 className="flex items-center gap-2 font-headline font-semibold text-primary mb-2">
+                                        <Sparkles className="h-4 w-4" /> AI Summary
+                                      </h4>
+                                      <p className="text-sm leading-relaxed">{book.summary}</p>
                                     </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className="text-muted-foreground italic">No detailed summary available for this book yet.</p>
-                              )}
-                              <div className="grid grid-cols-3 gap-4 border-t pt-4">
-                                <div className="flex items-center gap-3">
-                                  <MapPin className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Location</p>
-                                    <p className="text-sm font-medium">{book.location}</p>
+                                    {book.keyThemes && (
+                                      <div className="flex flex-wrap gap-2">
+                                        {book.keyThemes.map(theme => (
+                                          <Badge key={theme} variant="secondary" className="bg-accent/10 text-accent-foreground">{theme}</Badge>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <BookOpen className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Available</p>
-                                    <p className="text-sm font-medium">{book.available_copies} of {book.total_copies}</p>
+                                ) : (
+                                  <p className="text-muted-foreground italic">No detailed summary available for this book yet.</p>
+                                )}
+                                <div className="grid grid-cols-3 gap-4 border-t pt-4">
+                                  <div className="flex items-center gap-3">
+                                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Location</p>
+                                      <p className="text-sm font-medium">{book.location}</p>
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <Tag className="h-5 w-5 text-muted-foreground" />
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">ISBN</p>
-                                    <p className="text-sm font-medium">{book.isbn}</p>
+                                  <div className="flex items-center gap-3">
+                                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Available</p>
+                                      <p className="text-sm font-medium">{book.available_copies} of {book.total_copies}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <Tag className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">ISBN</p>
+                                      <p className="text-sm font-medium">{book.isbn}</p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4 border-t">
-                              <Button 
-                                className="bg-accent text-accent-foreground hover:bg-accent/90"
-                                disabled={book.available_copies <= 0}
-                                onClick={() => handleIssue(book.id)}
-                              >
-                                Issue Now
-                              </Button>
+                              <div className="flex justify-end gap-3 pt-4 border-t">
+                                <Button 
+                                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                                  disabled={book.available_copies <= 0}
+                                  onClick={() => handleIssue(book.id)}
+                                >
+                                  Issue Now
+                                </Button>
+                              </div>
                             </div>
                           </DialogContent>
                         </Dialog>
