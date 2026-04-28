@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -90,7 +91,9 @@ export default function AdminDashboard() {
     category: '',
     total_copies: 1,
     location: '',
-    description: ''
+    description: '',
+    summary: '',
+    keyThemes: [] as string[]
   });
 
   const [newMember, setNewMember] = useState({
@@ -128,7 +131,7 @@ export default function AdminDashboard() {
         ...prev,
         summary: result.summary,
         keyThemes: result.keyThemes
-      } as any));
+      }));
       toast({
         title: "AI Analysis Complete",
         description: "Successfully generated summary and themes.",
@@ -158,11 +161,11 @@ export default function AdminDashboard() {
       total_copies: newBook.total_copies,
       available_copies: newBook.total_copies,
       location: newBook.location,
-      summary: (newBook as any).summary,
-      keyThemes: (newBook as any).keyThemes
+      summary: newBook.summary,
+      keyThemes: newBook.keyThemes
     });
     setIsAddingBook(false);
-    setNewBook({ title: '', author: '', isbn: '', barcode: '', category: '', total_copies: 1, location: '', description: '' });
+    setNewBook({ title: '', author: '', isbn: '', barcode: '', category: '', total_copies: 1, location: '', description: '', summary: '', keyThemes: [] });
     toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
   };
 
@@ -401,17 +404,17 @@ export default function AdminDashboard() {
                       >
                         {aiLoading ? "Generating..." : "Generate AI Insights"}
                       </Button>
-                      {(newBook as any).summary && (
+                      {newBook.summary && (
                         <div className="mt-4 p-4 bg-accent/5 rounded-xl border border-accent/20">
                           <p className="text-xs font-bold uppercase text-accent mb-2 tracking-wider">Generated Summary</p>
-                          <p className="text-sm leading-relaxed text-foreground/90">{(newBook as any).summary}</p>
+                          <p className="text-sm leading-relaxed text-foreground/90">{newBook.summary}</p>
                         </div>
                       )}
                     </div>
                   </div>
                   <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsAddingBook(false)}>Cancel</Button>
-                    <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save</Button>
+                    <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save Book</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -530,14 +533,19 @@ export default function AdminDashboard() {
                     <CardTitle className="font-headline text-xl">Book Inventory</CardTitle>
                     <CardDescription>Manage ADSALIBRARY's physical and digital collection.</CardDescription>
                   </div>
-                  <div className="relative w-full md:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search title, barcode..." 
-                      className="pl-9" 
-                      value={bookSearchQuery}
-                      onChange={e => setBookSearchQuery(e.target.value)}
-                    />
+                  <div className="flex items-center gap-4">
+                    <Button onClick={() => setIsAddingBook(true)} variant="outline" size="sm" className="hidden md:flex border-primary text-primary hover:bg-primary/5">
+                      <Plus className="h-4 w-4 mr-2" /> Add Book
+                    </Button>
+                    <div className="relative w-full md:w-72">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search title, barcode..." 
+                        className="pl-9" 
+                        value={bookSearchQuery}
+                        onChange={e => setBookSearchQuery(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

@@ -17,7 +17,8 @@ import {
   XCircle,
   Sparkles,
   Barcode,
-  ArrowLeft
+  ArrowLeft,
+  Plus
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -30,10 +31,15 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CatalogPage() {
-  const { books, currentUser, issueBook } = useCatalogify();
+  const { books, currentUser, issueBook, addBook } = useCatalogify();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const initialCategory = searchParams.get('category') || '';
@@ -41,6 +47,22 @@ export default function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isAddingBook, setIsAddingBook] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const { toast } = useToast();
+
+  const [newBook, setNewBook] = useState({
+    title: '',
+    author: '',
+    isbn: '',
+    barcode: '',
+    category: '',
+    total_copies: 1,
+    location: '',
+    description: '',
+    summary: '',
+    keyThemes: [] as string[]
+  });
 
   const categories = Array.from(new Set(books.map(b => b.category)));
 
@@ -61,6 +83,64 @@ export default function CatalogPage() {
     issueBook(bookId, currentUser.id);
   };
 
+  const handleAiSummary = async () => {
+    if (!newBook.title || !newBook.author || !newBook.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide title, author, and description to generate a summary.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const result = await generateBookSummary({
+        title: newBook.title,
+        author: newBook.author,
+        description: newBook.description
+      });
+      setNewBook(prev => ({
+        ...prev,
+        summary: result.summary,
+        keyThemes: result.keyThemes
+      }));
+      toast({
+        title: "AI Analysis Complete",
+        description: "Successfully generated summary and themes.",
+      });
+    } catch (error) {
+      toast({
+        title: "AI Failed",
+        description: "Failed to generate summary. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAddBookSubmit = () => {
+    if (!newBook.title || !newBook.barcode) {
+      toast({ title: "Error", description: "Title and Barcode are required.", variant: "destructive" });
+      return;
+    }
+    addBook({
+      title: newBook.title,
+      author: newBook.author,
+      isbn: newBook.isbn,
+      barcode: newBook.barcode,
+      category: newBook.category || 'Fiction',
+      total_copies: newBook.total_copies,
+      available_copies: newBook.total_copies,
+      location: newBook.location,
+      summary: newBook.summary,
+      keyThemes: newBook.keyThemes
+    });
+    setIsAddingBook(false);
+    setNewBook({ title: '', author: '', isbn: '', barcode: '', category: '', total_copies: 1, location: '', description: '', summary: '', keyThemes: [] });
+    toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-background h-screen overflow-hidden">
       <Header />
@@ -71,21 +151,106 @@ export default function CatalogPage() {
               <h1 className="text-4xl font-headline font-bold mb-2">Library Catalog</h1>
               <p className="text-muted-foreground">Discover and borrow from our curated collection.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant={viewMode === 'grid' ? 'default' : 'outline'} 
-                size="icon" 
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid2X2 className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant={viewMode === 'list' ? 'default' : 'outline'} 
-                size="icon" 
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center gap-4">
+              {currentUser?.role === 'admin' && (
+                <Dialog open={isAddingBook} onOpenChange={setIsAddingBook}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all">
+                      <Plus className="mr-2 h-4 w-4" /> Add Book
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="font-headline text-2xl">Add Library Book</DialogTitle>
+                      <DialogDescription>
+                        Enter the book details. Use our AI assistant to enrich your catalog.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="title">Title</Label>
+                          <Input id="title" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="author">Author</Label>
+                          <Input id="author" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="isbn">ISBN</Label>
+                          <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="barcode">Barcode</Label>
+                          <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value.toUpperCase()})} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="category">Category</Label>
+                          <Input id="category" value={newBook.category} onChange={e => setNewBook({...newBook, category: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="copies">Total Copies</Label>
+                          <Input id="copies" type="number" value={newBook.total_copies} onChange={e => setNewBook({...newBook, total_copies: parseInt(e.target.value)})} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Location (Shelf)</Label>
+                        <Input id="location" value={newBook.location} onChange={e => setNewBook({...newBook, location: e.target.value})} />
+                      </div>
+                      <div className="space-y-2 border-t pt-4">
+                        <Label className="flex items-center gap-2 font-semibold">
+                          AI Insight Tool <Sparkles className="h-4 w-4 text-accent" />
+                        </Label>
+                        <DialogDescription className="pb-2">Provide a short book description to generate a summary and themes automatically.</DialogDescription>
+                        <textarea 
+                          className="w-full min-h-[100px] p-3 text-sm border rounded-md focus:ring-2 focus:ring-primary/20 outline-none" 
+                          placeholder="Enter book description/blurb here..."
+                          value={newBook.description}
+                          onChange={e => setNewBook({...newBook, description: e.target.value})}
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-accent text-accent hover:bg-accent/10"
+                          onClick={handleAiSummary}
+                          disabled={aiLoading}
+                        >
+                          {aiLoading ? "Generating..." : "Generate AI Insights"}
+                        </Button>
+                        {newBook.summary && (
+                          <div className="mt-4 p-4 bg-accent/5 rounded-xl border border-accent/20">
+                            <p className="text-xs font-bold uppercase text-accent mb-2 tracking-wider">Generated Summary</p>
+                            <p className="text-sm leading-relaxed text-foreground/90">{newBook.summary}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="ghost" onClick={() => setIsAddingBook(false)}>Cancel</Button>
+                      <Button className="bg-primary text-primary-foreground" onClick={handleAddBookSubmit}>Save Book</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant={viewMode === 'grid' ? 'default' : 'outline'} 
+                  size="icon" 
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid2X2 className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={viewMode === 'list' ? 'default' : 'outline'} 
+                  size="icon" 
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
