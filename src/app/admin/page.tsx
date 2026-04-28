@@ -516,7 +516,6 @@ export default function AdminDashboard() {
           <TabsList className="mb-6 bg-secondary/50 p-1">
             <TabsTrigger value="books">Inventory</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="active">Active Issues</TabsTrigger>
             <TabsTrigger value="overdue">
               Overdue {overdueCount > 0 && <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">{overdueCount}</Badge>}
             </TabsTrigger>
@@ -742,70 +741,6 @@ export default function AdminDashboard() {
                         </TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="active">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-xl">Active Issued Books</CardTitle>
-                <CardDescription>All books currently in possession of library members.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Book & Barcode</TableHead>
-                      <TableHead>Member</TableHead>
-                      <TableHead>Issue Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {activeTransactions.length > 0 ? (
-                      activeTransactions.map(t => {
-                        const book = books.find(b => b.id === t.book_id);
-                        const member = members.find(m => m.id === t.member_id);
-                        const isOverdue = new Date(t.due_date) < new Date();
-                        return (
-                          <TableRow key={t.id}>
-                            <TableCell>
-                              <div className="font-medium">{book?.title || 'Unknown'}</div>
-                              <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.barcode}</div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="font-medium">{member?.name || 'Unknown'}</div>
-                              <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
-                            </TableCell>
-                            <TableCell className="text-xs">{t.issue_date}</TableCell>
-                            <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>
-                              {t.due_date}
-                              {isOverdue && <span className="ml-1 text-[8px] uppercase">(Overdue)</span>}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => initiateReturn(t)}
-                                className="flex items-center gap-1 border-accent text-accent hover:bg-accent/10"
-                              >
-                                <Undo2 className="h-3 w-3" /> Return
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
-                          No active issues. All books are in the library.
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </CardContent>
