@@ -1,10 +1,10 @@
+
 "use client";
 
 import * as React from "react";
 import {
   BookOpen,
   LayoutDashboard,
-  Library,
   Settings,
   User,
   LogOut,
@@ -34,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Logo } from "@/components/logo";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { currentUser, logout, transactions } = useCatalogify();
@@ -84,14 +85,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="hover:bg-transparent">
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Library className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-bold font-headline">ADSALIBRARY</span>
-                  <span className="truncate text-xs text-muted-foreground">Smart Catalog</span>
+                <Logo hideText className="group-data-[collapsible=icon]:flex" />
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                  <span className="truncate font-bold font-headline text-primary">ADSALIBRARY</span>
+                  <span className="truncate text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Smart Catalog</span>
                 </div>
               </Link>
             </SidebarMenuButton>
