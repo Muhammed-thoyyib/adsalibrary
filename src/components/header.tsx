@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -11,6 +12,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { usePathname } from "next/navigation";
+import { Library } from "lucide-react";
 
 export function Header() {
   const pathname = usePathname();
@@ -18,7 +20,16 @@ export function Header() {
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
-      <SidebarTrigger className="-ml-1" />
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="h-4" />
+        <div className="flex items-center gap-2 px-2">
+          <Library className="h-5 w-5 text-primary" />
+          <span className="font-headline font-bold text-primary tracking-tight hidden sm:block">
+            ADSALIBRARY
+          </span>
+        </div>
+      </div>
       <Separator orientation="vertical" className="mr-2 h-4" />
       <Breadcrumb>
         <BreadcrumbList>
@@ -49,5 +60,3 @@ export function Header() {
     </header>
   );
 }
-
-import * as React from "react";
