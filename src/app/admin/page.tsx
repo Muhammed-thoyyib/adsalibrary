@@ -23,7 +23,8 @@ import {
   Calendar,
   HandHelping,
   Undo2,
-  ShieldAlert
+  ShieldAlert,
+  Scan
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -58,6 +59,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
 import { useToast } from '@/hooks/use-toast';
 import { Member, Transaction } from '@/lib/mock-data';
+import { BarcodeScanner } from '@/components/barcode-scanner';
 
 export default function AdminDashboard() {
   const { 
@@ -84,6 +86,10 @@ export default function AdminDashboard() {
   const [returningTransaction, setReturningTransaction] = useState<Transaction | null>(null);
   const [shouldWaiveFine, setShouldWaiveFine] = useState(false);
   
+  // Scanner state
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanTarget, setScanTarget] = useState<'add' | 'issue' | null>(null);
+
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
@@ -212,6 +218,27 @@ export default function AdminDashboard() {
     setShouldWaiveFine(false);
   };
 
+  const onBarcodeScan = (scannedBarcode: string) => {
+    if (scanTarget === 'add') {
+      setNewBook(prev => ({ ...prev, barcode: scannedBarcode.toUpperCase() }));
+      toast({ title: "Barcode Scanned", description: `Added barcode: ${scannedBarcode}` });
+    } else if (scanTarget === 'issue') {
+      const foundBook = books.find(b => b.barcode.toUpperCase() === scannedBarcode.toUpperCase());
+      if (foundBook) {
+        if (foundBook.available_copies > 0) {
+          setIssueData(prev => ({ ...prev, bookId: foundBook.id }));
+          toast({ title: "Book Found", description: `Selected: ${foundBook.title}` });
+        } else {
+          toast({ variant: "destructive", title: "Book Unavailable", description: "This book is currently out of stock." });
+        }
+      } else {
+        toast({ variant: "destructive", title: "Unknown Barcode", description: "No book found with this barcode in the catalog." });
+      }
+    }
+    setIsScanning(false);
+    setScanTarget(null);
+  };
+
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
     b.author.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
@@ -270,24 +297,41 @@ export default function AdminDashboard() {
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle>Issue Book to Member</DialogTitle>
-                    <DialogDescription>Select a book and a member to record a new loan (2-week period).</DialogDescription>
+                    <DialogDescription>Search for a book (or scan) and a member to record a new loan.</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="issue-book">Search Book</Label>
-                      <Select value={issueData.bookId} onValueChange={(val) => setIssueData({...issueData, bookId: val})}>
-                        <SelectTrigger id="issue-book">
-                          <SelectValue placeholder="Search by title or barcode" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {books.map(book => (
-                            <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
-                              {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {isScanning && scanTarget === 'issue' ? (
+                      <BarcodeScanner 
+                        onScan={onBarcodeScan} 
+                        onClose={() => { setIsScanning(false); setScanTarget(null); }} 
+                      />
+                    ) : (
+                      <div className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="issue-book">Search Book</Label>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 text-accent gap-1"
+                            onClick={() => { setIsScanning(true); setScanTarget('issue'); }}
+                          >
+                            <Scan className="h-3 w-3" /> Scan Barcode
+                          </Button>
+                        </div>
+                        <Select value={issueData.bookId} onValueChange={(val) => setIssueData({...issueData, bookId: val})}>
+                          <SelectTrigger id="issue-book">
+                            <SelectValue placeholder="Search by title or barcode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {books.map(book => (
+                              <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
+                                {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="grid gap-2">
                       <Label htmlFor="issue-member">Search Member</Label>
                       <Select value={issueData.memberId} onValueChange={(val) => setIssueData({...issueData, memberId: val})}>
@@ -306,7 +350,7 @@ export default function AdminDashboard() {
                   </div>
                   <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsIssuingBook(false)}>Cancel</Button>
-                    <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Save</Button>
+                    <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Confirm Issue</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -359,7 +403,7 @@ export default function AdminDashboard() {
                   <DialogHeader>
                     <DialogTitle className="font-headline text-2xl">Add Library Book</DialogTitle>
                     <DialogDescription>
-                      Enter the book details. Use our AI assistant to enrich your catalog.
+                      Enter the book details. Scan the barcode for accuracy.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -379,10 +423,30 @@ export default function AdminDashboard() {
                         <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="barcode">Barcode</Label>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="barcode">Barcode</Label>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-6 text-[10px] gap-1 px-1.5"
+                            onClick={() => { setIsScanning(true); setScanTarget('add'); }}
+                          >
+                            <Scan className="h-3 w-3" /> Scan
+                          </Button>
+                        </div>
                         <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value.toUpperCase()})} />
                       </div>
                     </div>
+                    
+                    {isScanning && scanTarget === 'add' && (
+                      <div className="col-span-2 border rounded-lg p-2 bg-muted/20">
+                        <BarcodeScanner 
+                          onScan={onBarcodeScan} 
+                          onClose={() => { setIsScanning(false); setScanTarget(null); }} 
+                        />
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="category">Category</Label>
