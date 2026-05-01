@@ -19,7 +19,7 @@ import {
   UserPlus,
   Barcode,
   Eye,
-  History,
+  History as HistoryIcon,
   Calendar,
   HandHelping,
   Undo2,
@@ -75,6 +75,7 @@ export default function AdminDashboard() {
   
   const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [isAddingBook, setIsAddingBook] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isIssuingBook, setIsIssuingBook] = useState(false);
@@ -221,6 +222,17 @@ export default function AdminDashboard() {
     m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
     m.member_id.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
+
+  const filteredTransactions = transactions.filter(t => {
+    const book = books.find(b => b.id === t.book_id);
+    const member = members.find(m => m.id === t.member_id);
+    const query = historySearchQuery.toLowerCase();
+    return (
+      book?.title.toLowerCase().includes(query) ||
+      member?.name.toLowerCase().includes(query) ||
+      t.status.toLowerCase().includes(query)
+    );
+  });
 
   const activeTransactions = useMemo(() => {
     return transactions.filter(t => t.status === 'issued');
@@ -421,7 +433,6 @@ export default function AdminDashboard() {
             </div>
           </header>
 
-          {/* Return Confirmation Dialog */}
           <Dialog open={!!returningTransaction} onOpenChange={(open) => !open && setReturningTransaction(null)}>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -691,7 +702,7 @@ export default function AdminDashboard() {
 
                                   <div className="space-y-4">
                                     <h4 className="text-sm font-semibold flex items-center gap-2">
-                                      <History className="h-4 w-4" /> Activity History
+                                      <HistoryIcon className="h-4 w-4" /> Activity History
                                     </h4>
                                     <div className="space-y-2">
                                       {getMemberTransactions(member.id).length > 0 ? (
@@ -823,9 +834,20 @@ export default function AdminDashboard() {
 
             <TabsContent value="transactions">
               <Card>
-                <CardHeader>
-                  <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
-                  <CardDescription>Real-time log of all book circulations at ADSALIBRARY.</CardDescription>
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
+                    <CardDescription>Real-time log of all book circulations at ADSALIBRARY.</CardDescription>
+                  </div>
+                  <div className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search title, member, status..." 
+                      className="pl-9" 
+                      value={historySearchQuery}
+                      onChange={e => setHistorySearchQuery(e.target.value)}
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -840,7 +862,7 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {transactions.map(t => {
+                      {filteredTransactions.map(t => {
                         const book = books.find(b => b.id === t.book_id);
                         const member = members.find(m => m.id === t.member_id);
                         const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
@@ -866,6 +888,13 @@ export default function AdminDashboard() {
                           </TableRow>
                         );
                       })}
+                      {filteredTransactions.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">
+                            No matching history found.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
