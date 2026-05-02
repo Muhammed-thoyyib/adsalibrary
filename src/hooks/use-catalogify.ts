@@ -7,6 +7,7 @@ import { Book, Member, Transaction, INITIAL_BOOKS, INITIAL_MEMBERS, INITIAL_TRAN
 export type LoginCredentials = {
   email?: string;
   password?: string;
+  username?: string;
   name?: string;
   code?: string;
 };
@@ -38,8 +39,10 @@ export function useCatalogify() {
         m.role === 'user'
       );
     } else {
+      // For librarians, username is the email
+      const librarianIdentifier = (creds.username || creds.email)?.toLowerCase();
       user = members.find(m => 
-        m.email.toLowerCase() === creds.email?.toLowerCase() && 
+        m.email.toLowerCase() === librarianIdentifier && 
         m.role === 'admin'
       );
     }
