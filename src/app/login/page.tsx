@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -43,7 +42,7 @@ export default function LoginPage() {
         title: "Authentication Failed",
         description: role === 'user' 
           ? "Check Name/Code. (Try: Alice Johnson / LIB001)"
-          : "Invalid credentials. (Try: mthoyyib40@gmail.com)",
+          : "Invalid credentials. (Try: ADSA / adsa)",
         variant: "destructive"
       });
     }
@@ -110,13 +109,13 @@ export default function LoginPage() {
 
               <TabsContent value="admin" className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username (Email)</Label>
+                  <Label htmlFor="username">Username (Email or Name)</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
                       id="username" 
                       type="text" 
-                      placeholder="mthoyyib40@gmail.com" 
+                      placeholder="e.g. ADSA" 
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="pl-10"
@@ -155,7 +154,7 @@ export default function LoginPage() {
             </div>
             <p className="text-center text-sm text-muted-foreground">
               Member: Alice Johnson / LIB001<br/>
-              Librarian: mthoyyib40@gmail.com
+              Librarian: ADSA / adsa
             </p>
           </CardFooter>
         </Card>

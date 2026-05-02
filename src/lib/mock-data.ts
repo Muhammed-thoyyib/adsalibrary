@@ -20,6 +20,7 @@ export type Member = {
   phone?: string;
   role: 'admin' | 'user';
   status: 'active' | 'suspended';
+  password?: string;
 };
 
 export type Transaction = {
@@ -84,6 +85,15 @@ export const INITIAL_MEMBERS: Member[] = [
     phone: '555-0101',
     role: 'user',
     status: 'active'
+  },
+  {
+    id: 'm-adsa',
+    name: 'ADSA',
+    email: 'adsa@adsalibrary.com',
+    member_id: 'ADM-ADSA',
+    role: 'admin',
+    status: 'active',
+    password: 'adsa'
   },
   {
     id: 'm2',

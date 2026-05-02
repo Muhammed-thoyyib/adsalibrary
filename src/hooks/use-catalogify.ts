@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -39,11 +38,12 @@ export function useCatalogify() {
         m.role === 'user'
       );
     } else {
-      // For librarians, username is the email
-      const librarianIdentifier = (creds.username || creds.email)?.toLowerCase();
+      // For librarians, check both email and name for the username field
+      const ident = (creds.username || creds.email)?.toLowerCase();
       user = members.find(m => 
-        m.email.toLowerCase() === librarianIdentifier && 
-        m.role === 'admin'
+        (m.email?.toLowerCase() === ident || m.name.toLowerCase() === ident) && 
+        m.role === 'admin' &&
+        (m.password === undefined || m.password === creds.password)
       );
     }
 
