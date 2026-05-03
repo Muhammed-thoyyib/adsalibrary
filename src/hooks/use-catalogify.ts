@@ -12,6 +12,7 @@ export type LoginCredentials = {
 };
 
 const LOAN_DAYS = 14; // 2 weeks
+const FLAT_FINE = 5; // ₹5 flat fine
 
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
@@ -36,7 +37,6 @@ export function useCatalogify() {
         m.role === 'user'
       );
     } else {
-      // For librarians, check both email and name for the username field
       const ident = (creds.username || creds.email)?.toLowerCase();
       user = members.find(m => 
         (m.email?.toLowerCase() === ident || m.name.toLowerCase() === ident) && 
@@ -57,6 +57,22 @@ export function useCatalogify() {
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('adsalibrary_user');
+  };
+
+  const calculateFine = (transaction: Transaction): number => {
+    const dueDate = new Date(transaction.due_date);
+    const compareDate = transaction.status === 'returned' && transaction.return_date 
+      ? new Date(transaction.return_date) 
+      : new Date();
+    
+    // Normalize to midnight for fair comparison
+    dueDate.setHours(0, 0, 0, 0);
+    compareDate.setHours(0, 0, 0, 0);
+
+    if (compareDate > dueDate) {
+      return FLAT_FINE;
+    }
+    return 0;
   };
 
   const addBook = (book: Omit<Book, 'id'>) => {
@@ -135,5 +151,6 @@ export function useCatalogify() {
     deleteMember,
     issueBook,
     returnBook,
+    calculateFine,
   };
 }

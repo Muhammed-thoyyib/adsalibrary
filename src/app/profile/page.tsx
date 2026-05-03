@@ -19,10 +19,10 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Book, Clock, History, AlertCircle } from 'lucide-react';
+import { Book, Clock, History, AlertCircle, IndianRupee } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { currentUser, transactions, books } = useCatalogify();
+  const { currentUser, transactions, books, calculateFine } = useCatalogify();
 
   if (!currentUser) {
     return (
@@ -40,6 +40,8 @@ export default function ProfilePage() {
   const myTransactions = transactions.filter(t => t.member_id === currentUser.id);
   const activeBorrowed = myTransactions.filter(t => t.status === 'issued');
   const pastBorrowed = myTransactions.filter(t => t.status === 'returned');
+  
+  const totalFine = myTransactions.reduce((sum, t) => sum + calculateFine(t), 0);
 
   return (
     <div className="flex-1 flex flex-col bg-background h-screen overflow-hidden">
@@ -78,19 +80,19 @@ export default function ProfilePage() {
                       <Book className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-xs opacity-80 uppercase font-semibold">Currently Borrowed</p>
+                      <p className="text-xs opacity-80 uppercase font-semibold">Borrowed</p>
                       <p className="text-2xl font-bold">{activeBorrowed.length}</p>
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-accent text-accent-foreground">
+                <Card className={totalFine > 0 ? "bg-destructive text-destructive-foreground" : "bg-accent text-accent-foreground"}>
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="p-2 bg-white/20 rounded-lg">
-                      <History className="h-5 w-5" />
+                      <IndianRupee className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-xs opacity-80 uppercase font-semibold">Total Borrowed</p>
-                      <p className="text-2xl font-bold">{myTransactions.length}</p>
+                      <p className="text-xs opacity-80 uppercase font-semibold">Total Fines</p>
+                      <p className="text-2xl font-bold">₹{totalFine}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -103,7 +105,7 @@ export default function ProfilePage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="font-headline">Current Borrowings</CardTitle>
-                    <CardDescription>Books currently in your possession (2-week loan limit).</CardDescription>
+                    <CardDescription>14-day loan limit. ₹5 fine for overdue items.</CardDescription>
                   </div>
                   <Clock className="h-5 w-5 text-muted-foreground" />
                 </CardHeader>
@@ -113,21 +115,24 @@ export default function ProfilePage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Book Title</TableHead>
-                          <TableHead>Issue Date</TableHead>
                           <TableHead>Due Date</TableHead>
+                          <TableHead>Fine</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {activeBorrowed.map(t => {
                           const book = books.find(b => b.id === t.book_id);
                           const isOverdue = new Date(t.due_date) < new Date();
+                          const fine = calculateFine(t);
                           return (
                             <TableRow key={t.id}>
                               <TableCell className="font-medium">{book?.title}</TableCell>
-                              <TableCell>{t.issue_date}</TableCell>
                               <TableCell className={isOverdue ? 'text-destructive font-semibold' : ''}>
                                 {t.due_date}
                                 {isOverdue && <span className="ml-2 text-xs">(Overdue)</span>}
+                              </TableCell>
+                              <TableCell className={fine > 0 ? 'text-destructive font-bold' : ''}>
+                                ₹{fine}
                               </TableCell>
                             </TableRow>
                           );
@@ -144,8 +149,8 @@ export default function ProfilePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-headline">Borrowing History</CardTitle>
-                  <CardDescription>A record of your past library activity.</CardDescription>
+                  <CardTitle className="font-headline">Past Activity</CardTitle>
+                  <CardDescription>A record of your returned books.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {pastBorrowed.length > 0 ? (
@@ -154,18 +159,19 @@ export default function ProfilePage() {
                         <TableRow>
                           <TableHead>Book Title</TableHead>
                           <TableHead>Returned On</TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead>Fine Paid</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {pastBorrowed.map(t => {
                           const book = books.find(b => b.id === t.book_id);
+                          const fine = calculateFine(t);
                           return (
                             <TableRow key={t.id}>
                               <TableCell className="font-medium text-muted-foreground">{book?.title}</TableCell>
                               <TableCell className="text-muted-foreground">{t.return_date}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 w-fit">Returned</Badge>
+                              <TableCell className="text-muted-foreground">
+                                ₹{fine}
                               </TableCell>
                             </TableRow>
                           );

@@ -22,7 +22,8 @@ import {
   Calendar,
   HandHelping,
   Undo2,
-  Scan
+  Scan,
+  IndianRupee
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
     deleteMember, 
     returnBook,
     issueBook,
+    calculateFine
   } = useCatalogify();
   
   const [bookSearchQuery, setBookSearchQuery] = useState('');
@@ -520,6 +522,11 @@ export default function AdminDashboard() {
                   <div className="p-3 bg-secondary/30 rounded-lg text-sm">
                     <p className="font-semibold">{books.find(b => b.id === returningTransaction.book_id)?.title}</p>
                     <p className="text-xs text-muted-foreground">Issued to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
+                    {calculateFine(returningTransaction) > 0 && (
+                      <div className="mt-2 flex items-center gap-1 text-destructive font-bold">
+                        <AlertCircle className="h-3 w-3" /> Fine: ₹{calculateFine(returningTransaction)}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -735,6 +742,7 @@ export default function AdminDashboard() {
                                       </h4>
                                       {(() => {
                                         const mTrans = getMemberTransactions(member.id);
+                                        const totalFine = mTrans.reduce((sum, t) => sum + calculateFine(t), 0);
                                         return (
                                           <div className="grid grid-cols-2 gap-2">
                                             <div className="bg-white p-3 rounded-lg border text-center">
@@ -742,8 +750,8 @@ export default function AdminDashboard() {
                                               <p className="text-xl font-bold">{mTrans.filter(t => t.status === 'issued').length}</p>
                                             </div>
                                             <div className="bg-white p-3 rounded-lg border text-center">
-                                              <p className="text-xs text-muted-foreground">Lifetime</p>
-                                              <p className="text-xl font-bold">{mTrans.length}</p>
+                                              <p className="text-xs text-muted-foreground">Fines</p>
+                                              <p className="text-xl font-bold text-destructive">₹{totalFine}</p>
                                             </div>
                                           </div>
                                         );
@@ -760,6 +768,7 @@ export default function AdminDashboard() {
                                         getMemberTransactions(member.id).map(t => {
                                           const book = books.find(b => b.id === t.book_id);
                                           const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
+                                          const fine = calculateFine(t);
                                           
                                           return (
                                             <div key={t.id} className="flex items-start justify-between p-3 border rounded-lg text-sm bg-card hover:bg-accent/5 transition-colors">
@@ -770,6 +779,7 @@ export default function AdminDashboard() {
                                                   <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive font-bold' : ''}`}>
                                                     <Clock className="h-3 w-3" /> Due: {t.due_date}
                                                   </span>
+                                                  {fine > 0 && <span className="text-destructive font-bold flex items-center gap-1"><IndianRupee className="h-2 w-2" /> Fine: ₹{fine}</span>}
                                                 </div>
                                               </div>
                                               <div className="flex flex-col items-end gap-2">
@@ -834,8 +844,8 @@ export default function AdminDashboard() {
                       <TableRow>
                         <TableHead>Book & Barcode</TableHead>
                         <TableHead>Issued To</TableHead>
-                        <TableHead>Issue Date</TableHead>
                         <TableHead>Due Date</TableHead>
+                        <TableHead>Fine</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -845,6 +855,7 @@ export default function AdminDashboard() {
                           const book = books.find(b => b.id === t.book_id);
                           const member = members.find(m => m.id === t.member_id);
                           const isOverdue = new Date(t.due_date) < new Date();
+                          const fine = calculateFine(t);
                           return (
                             <TableRow key={t.id}>
                               <TableCell>
@@ -855,9 +866,11 @@ export default function AdminDashboard() {
                                 <div className="font-medium">{member?.name || 'Unknown'}</div>
                                 <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
                               </TableCell>
-                              <TableCell className="text-xs">{t.issue_date}</TableCell>
                               <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>
                                 {t.due_date}
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                {fine > 0 ? <span className="text-destructive font-bold">₹{fine}</span> : '₹0'}
                               </TableCell>
                               <TableCell className="text-right">
                                 <Button 
@@ -874,7 +887,7 @@ export default function AdminDashboard() {
                         })
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
+                          <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">
                             No active issues found.
                           </TableCell>
                         </TableRow>
@@ -889,7 +902,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline text-xl text-destructive">Overdue Books</CardTitle>
-                  <CardDescription>Track books that have passed their 14-day loan limit.</CardDescription>
+                  <CardDescription>Books past their 14-day limit. Flat ₹5 fine applied.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -898,6 +911,7 @@ export default function AdminDashboard() {
                         <TableHead>Book & Barcode</TableHead>
                         <TableHead>Issued To</TableHead>
                         <TableHead>Due Date</TableHead>
+                        <TableHead>Fine</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -919,6 +933,9 @@ export default function AdminDashboard() {
                               <TableCell className="text-destructive font-bold text-sm">
                                 {t.due_date}
                               </TableCell>
+                              <TableCell className="text-destructive font-bold text-sm">
+                                ₹{calculateFine(t)}
+                              </TableCell>
                               <TableCell className="text-right">
                                 <Button 
                                   size="sm" 
@@ -934,7 +951,7 @@ export default function AdminDashboard() {
                         })
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center py-10 text-muted-foreground italic">
+                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
                             No overdue books found. Catalog is up to date!
                           </TableCell>
                         </TableRow>
@@ -968,9 +985,8 @@ export default function AdminDashboard() {
                       <TableRow>
                         <TableHead>Book</TableHead>
                         <TableHead>Member</TableHead>
-                        <TableHead>Issued</TableHead>
-                        <TableHead>Due</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Fine</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -978,18 +994,19 @@ export default function AdminDashboard() {
                       {filteredTransactions.map(t => {
                         const book = books.find(b => b.id === t.book_id);
                         const member = members.find(m => m.id === t.member_id);
-                        const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
+                        const fine = calculateFine(t);
                         return (
                           <TableRow key={t.id}>
                             <TableCell className="font-medium max-w-[200px] truncate">{book?.title || 'Unknown'}</TableCell>
                             <TableCell>{member?.name || 'Unknown'}</TableCell>
-                            <TableCell className="text-xs">{t.issue_date}</TableCell>
-                            <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>{t.due_date}</TableCell>
                             <TableCell>
                               <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit text-[10px] uppercase tracking-tighter">
                                 {t.status === 'returned' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                                 {t.status}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {fine > 0 ? <span className="text-destructive font-bold">₹{fine}</span> : '₹0'}
                             </TableCell>
                             <TableCell className="text-right">
                               {t.status === 'issued' && (
@@ -1003,7 +1020,7 @@ export default function AdminDashboard() {
                       })}
                       {filteredTransactions.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">
+                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
                             No matching history found.
                           </TableCell>
                         </TableRow>
