@@ -903,7 +903,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline text-xl text-destructive">Overdue Books</CardTitle>
-                  <CardDescription>Books past their 14-day limit. Flat ₹5 fine applied.</CardDescription>
+                  <CardDescription>Books past their 14-day limit. Fine: ₹5 for first week, increases by ₹5 every subsequent week.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>

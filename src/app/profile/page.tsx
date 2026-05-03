@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Header } from '@/components/header';
@@ -105,7 +106,7 @@ export default function ProfilePage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="font-headline">Current Borrowings</CardTitle>
-                    <CardDescription>14-day loan limit. ₹5 fine for overdue items.</CardDescription>
+                    <CardDescription>14-day loan limit. Overdue fine: ₹5/week.</CardDescription>
                   </div>
                   <Clock className="h-5 w-5 text-muted-foreground" />
                 </CardHeader>

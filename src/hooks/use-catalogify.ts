@@ -13,7 +13,7 @@ export type LoginCredentials = {
 };
 
 const LOAN_DAYS = 14; // 2 weeks
-const FLAT_FINE = 5; // ₹5 flat fine
+const FLAT_FINE = 5; // ₹5 base fine per week
 
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
@@ -71,8 +71,12 @@ export function useCatalogify() {
     dueDate.setHours(0, 0, 0, 0);
     compareDate.setHours(0, 0, 0, 0);
 
-    if (compareDate > dueDate) {
-      return FLAT_FINE;
+    const diffTime = compareDate.getTime() - dueDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 0) {
+      // Rs 5 for the first week, and increases by Rs 5 every week (or part thereof)
+      return Math.ceil(diffDays / 7) * FLAT_FINE;
     }
     return 0;
   }, []);
