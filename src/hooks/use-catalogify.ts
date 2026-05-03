@@ -12,8 +12,6 @@ export type LoginCredentials = {
 };
 
 const LOAN_DAYS = 14; // 2 weeks
-const BASE_OVERDUE_FINE = 5;
-const WEEKLY_INCREMENT = 15;
 
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
@@ -85,28 +83,6 @@ export function useCatalogify() {
     setMembers(prev => prev.filter(m => m.id !== id));
   };
 
-  const calculateFine = (dueDate: string, returnDate?: string, isWaived: boolean = false) => {
-    if (isWaived) return 0;
-    
-    const targetDate = returnDate ? new Date(returnDate) : new Date();
-    const due = new Date(dueDate);
-    
-    // Normalize dates to midnight for calculation
-    targetDate.setHours(0, 0, 0, 0);
-    due.setHours(0, 0, 0, 0);
-
-    // If the book is not overdue, there is no fine
-    if (targetDate <= due) return 0;
-
-    // Calculate days overdue
-    const diffTime = targetDate.getTime() - due.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Base fine (Rs 5) + Rs 15 for each full additional week
-    const additionalWeeks = Math.floor(diffDays / 7);
-    return BASE_OVERDUE_FINE + (additionalWeeks * WEEKLY_INCREMENT);
-  };
-
   const issueBook = (bookId: string, memberId: string) => {
     const book = books.find(b => b.id === bookId);
     if (!book || book.available_copies <= 0) return false;
@@ -129,14 +105,14 @@ export function useCatalogify() {
     return true;
   };
 
-  const returnBook = (transactionId: string, waiveFine: boolean = false) => {
+  const returnBook = (transactionId: string) => {
     const transaction = transactions.find(t => t.id === transactionId);
     if (!transaction || transaction.status === 'returned') return;
 
     const returnDate = new Date().toISOString().split('T')[0];
     
     setTransactions(prev => prev.map(t => 
-      t.id === transactionId ? { ...t, status: 'returned', return_date: returnDate, waive_fine: waiveFine } : t
+      t.id === transactionId ? { ...t, status: 'returned', return_date: returnDate } : t
     ));
 
     const book = books.find(b => b.id === transaction.book_id);
@@ -159,6 +135,5 @@ export function useCatalogify() {
     deleteMember,
     issueBook,
     returnBook,
-    calculateFine
   };
 }

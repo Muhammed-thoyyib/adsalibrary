@@ -22,7 +22,6 @@ import {
   Calendar,
   HandHelping,
   Undo2,
-  ShieldAlert,
   Scan
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
@@ -54,7 +53,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
 import { useToast } from '@/hooks/use-toast';
 import { Member, Transaction } from '@/lib/mock-data';
@@ -71,7 +69,6 @@ export default function AdminDashboard() {
     deleteMember, 
     returnBook,
     issueBook,
-    calculateFine
   } = useCatalogify();
   
   const [bookSearchQuery, setBookSearchQuery] = useState('');
@@ -84,7 +81,6 @@ export default function AdminDashboard() {
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   
   const [returningTransaction, setReturningTransaction] = useState<Transaction | null>(null);
-  const [shouldWaiveFine, setShouldWaiveFine] = useState(false);
   
   // Scanner state
   const [isScanning, setIsScanning] = useState(false);
@@ -204,18 +200,16 @@ export default function AdminDashboard() {
 
   const handleReturnConfirm = () => {
     if (!returningTransaction) return;
-    returnBook(returningTransaction.id, shouldWaiveFine);
+    returnBook(returningTransaction.id);
     toast({ 
       title: "Book Returned", 
-      description: shouldWaiveFine ? "The book has been returned and fine was waived." : "The book has been marked as returned." 
+      description: "The book has been marked as returned." 
     });
     setReturningTransaction(null);
-    setShouldWaiveFine(false);
   };
 
   const initiateReturn = (transaction: Transaction) => {
     setReturningTransaction(transaction);
-    setShouldWaiveFine(false);
   };
 
   const onBarcodeScan = (scannedBarcode: string) => {
@@ -527,28 +521,6 @@ export default function AdminDashboard() {
                     <p className="font-semibold">{books.find(b => b.id === returningTransaction.book_id)?.title}</p>
                     <p className="text-xs text-muted-foreground">Issued to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
                   </div>
-                  
-                  {calculateFine(returningTransaction.due_date) > 0 && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-lg border border-destructive/20">
-                        <ShieldAlert className="h-4 w-4 shrink-0" />
-                        <div className="text-xs">
-                          <p className="font-bold">Overdue detected!</p>
-                          <p>Fine amount: ₹{calculateFine(returningTransaction.due_date)}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="waive-fine" 
-                          checked={shouldWaiveFine} 
-                          onCheckedChange={(checked) => setShouldWaiveFine(!!checked)}
-                        />
-                        <Label htmlFor="waive-fine" className="text-sm font-medium leading-none cursor-pointer">
-                          Waive this fine
-                        </Label>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
               <DialogFooter>
@@ -787,7 +759,6 @@ export default function AdminDashboard() {
                                       {getMemberTransactions(member.id).length > 0 ? (
                                         getMemberTransactions(member.id).map(t => {
                                           const book = books.find(b => b.id === t.book_id);
-                                          const fine = calculateFine(t.due_date, t.return_date, t.waive_fine);
                                           const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
                                           
                                           return (
@@ -800,12 +771,6 @@ export default function AdminDashboard() {
                                                     <Clock className="h-3 w-3" /> Due: {t.due_date}
                                                   </span>
                                                 </div>
-                                                {fine > 0 && (
-                                                  <Badge variant="destructive" className="w-fit text-[9px] py-0">Fine: ₹{fine}</Badge>
-                                                )}
-                                                {t.waive_fine && (
-                                                  <Badge variant="outline" className="w-fit text-[9px] py-0 border-accent text-accent">Fine Waived</Badge>
-                                                )}
                                               </div>
                                               <div className="flex flex-col items-end gap-2">
                                                 <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
@@ -933,7 +898,6 @@ export default function AdminDashboard() {
                         <TableHead>Book & Barcode</TableHead>
                         <TableHead>Issued To</TableHead>
                         <TableHead>Due Date</TableHead>
-                        <TableHead>Current Fine</TableHead>
                         <TableHead className="text-right">Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -942,7 +906,6 @@ export default function AdminDashboard() {
                         overdueTransactions.map(t => {
                           const book = books.find(b => b.id === t.book_id);
                           const member = members.find(m => m.id === t.member_id);
-                          const fine = calculateFine(t.due_date);
                           return (
                             <TableRow key={t.id} className="bg-destructive/5">
                               <TableCell>
@@ -955,9 +918,6 @@ export default function AdminDashboard() {
                               </TableCell>
                               <TableCell className="text-destructive font-bold text-sm">
                                 {t.due_date}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="destructive" className="font-bold">₹{fine}</Badge>
                               </TableCell>
                               <TableCell className="text-right">
                                 <Button 
@@ -974,7 +934,7 @@ export default function AdminDashboard() {
                         })
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
+                          <TableCell colSpan={4} className="text-center py-10 text-muted-foreground italic">
                             No overdue books found. Catalog is up to date!
                           </TableCell>
                         </TableRow>

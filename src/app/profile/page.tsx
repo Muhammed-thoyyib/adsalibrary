@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Book, Clock, History, AlertCircle } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { currentUser, transactions, books, calculateFine } = useCatalogify();
+  const { currentUser, transactions, books } = useCatalogify();
 
   if (!currentUser) {
     return (
@@ -115,14 +115,12 @@ export default function ProfilePage() {
                           <TableHead>Book Title</TableHead>
                           <TableHead>Issue Date</TableHead>
                           <TableHead>Due Date</TableHead>
-                          <TableHead>Fine (Est.)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {activeBorrowed.map(t => {
                           const book = books.find(b => b.id === t.book_id);
                           const isOverdue = new Date(t.due_date) < new Date();
-                          const fine = calculateFine(t.due_date, undefined, t.waive_fine);
                           return (
                             <TableRow key={t.id}>
                               <TableCell className="font-medium">{book?.title}</TableCell>
@@ -130,9 +128,6 @@ export default function ProfilePage() {
                               <TableCell className={isOverdue ? 'text-destructive font-semibold' : ''}>
                                 {t.due_date}
                                 {isOverdue && <span className="ml-2 text-xs">(Overdue)</span>}
-                              </TableCell>
-                              <TableCell className={fine > 0 ? 'text-destructive font-bold' : ''}>
-                                ₹{fine.toFixed(2)}
                               </TableCell>
                             </TableRow>
                           );
@@ -160,25 +155,17 @@ export default function ProfilePage() {
                           <TableHead>Book Title</TableHead>
                           <TableHead>Returned On</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Paid Fine</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {pastBorrowed.map(t => {
                           const book = books.find(b => b.id === t.book_id);
-                          const fine = calculateFine(t.due_date, t.return_date, t.waive_fine);
                           return (
                             <TableRow key={t.id}>
                               <TableCell className="font-medium text-muted-foreground">{book?.title}</TableCell>
                               <TableCell className="text-muted-foreground">{t.return_date}</TableCell>
                               <TableCell>
-                                <div className="flex flex-col gap-1">
-                                  <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 w-fit">Returned</Badge>
-                                  {t.waive_fine && <span className="text-[10px] text-accent font-medium">Fine Waived</span>}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-xs text-muted-foreground">
-                                {fine > 0 ? `₹${fine.toFixed(2)}` : 'None'}
+                                <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200 w-fit">Returned</Badge>
                               </TableCell>
                             </TableRow>
                           );
