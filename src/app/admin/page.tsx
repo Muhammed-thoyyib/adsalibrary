@@ -78,6 +78,7 @@ export default function AdminDashboard() {
   const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
   const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [isAddingBook, setIsAddingBook] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isIssuingBook, setIsIssuingBook] = useState(false);
@@ -264,6 +265,19 @@ export default function AdminDashboard() {
   const activeTransactions = useMemo(() => {
     return transactions.filter(t => t.status === 'issued');
   }, [transactions]);
+
+  const filteredActiveTransactions = useMemo(() => {
+    return activeTransactions.filter(t => {
+      const book = books.find(b => b.id === t.book_id);
+      const member = members.find(m => m.id === t.member_id);
+      const query = activeSearchQuery.toLowerCase();
+      return (
+        book?.title.toLowerCase().includes(query) ||
+        member?.name.toLowerCase().includes(query) ||
+        book?.barcode.toLowerCase().includes(query)
+      );
+    });
+  }, [activeTransactions, activeSearchQuery, books, members]);
 
   const overdueTransactions = useMemo(() => {
     const today = new Date();
@@ -595,6 +609,7 @@ export default function AdminDashboard() {
             <TabsList className="mb-6 bg-secondary/50 p-1">
               <TabsTrigger value="books">Inventory</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="active">Active Issues</TabsTrigger>
               <TabsTrigger value="overdue">
                 Overdue {overdueCount > 0 && <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">{overdueCount}</Badge>}
               </TabsTrigger>
@@ -825,6 +840,80 @@ export default function AdminDashboard() {
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="active">
+              <Card>
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="font-headline text-xl">Active Issues</CardTitle>
+                    <CardDescription>All books currently in possession of members.</CardDescription>
+                  </div>
+                  <div className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search title, member, barcode..." 
+                      className="pl-9" 
+                      value={activeSearchQuery}
+                      onChange={e => setActiveSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Book & Barcode</TableHead>
+                        <TableHead>Issued To</TableHead>
+                        <TableHead>Issue Date</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredActiveTransactions.length > 0 ? (
+                        filteredActiveTransactions.map(t => {
+                          const book = books.find(b => b.id === t.book_id);
+                          const member = members.find(m => m.id === t.member_id);
+                          const isOverdue = new Date(t.due_date) < new Date();
+                          return (
+                            <TableRow key={t.id}>
+                              <TableCell>
+                                <div className="font-medium">{book?.title || 'Unknown'}</div>
+                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.barcode}</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">{member?.name || 'Unknown'}</div>
+                                <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
+                              </TableCell>
+                              <TableCell className="text-xs">{t.issue_date}</TableCell>
+                              <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>
+                                {t.due_date}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => initiateReturn(t)}
+                                  className="border-accent text-accent hover:bg-accent/10"
+                                >
+                                  Return
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
+                            No active issues found.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
