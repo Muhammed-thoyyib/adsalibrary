@@ -45,7 +45,7 @@ export default function Home() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     className="w-full pl-12 pr-32 h-14 bg-white/95 border-none rounded-full shadow-lg text-lg focus-visible:ring-accent"
-                    placeholder="Search by title, author, or ISBN..."
+                    placeholder="Search by title, author, or Book Number..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -94,7 +93,7 @@ export default function AdminDashboard() {
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
-    isbn: '',
+    book_number: '',
     barcode: '',
     category: '',
     total_copies: 1,
@@ -163,7 +162,7 @@ export default function AdminDashboard() {
     addBook({
       title: newBook.title,
       author: newBook.author,
-      isbn: newBook.isbn,
+      book_number: newBook.book_number,
       barcode: newBook.barcode,
       category: newBook.category || 'Fiction',
       total_copies: newBook.total_copies,
@@ -173,7 +172,7 @@ export default function AdminDashboard() {
       keyThemes: newBook.keyThemes
     });
     setIsAddingBook(false);
-    setNewBook({ title: '', author: '', isbn: '', barcode: '', category: '', total_copies: 1, location: '', description: '', summary: '', keyThemes: [] });
+    setNewBook({ title: '', author: '', book_number: '', barcode: '', category: '', total_copies: 1, location: '', description: '', summary: '', keyThemes: [] });
     toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
   };
 
@@ -243,7 +242,8 @@ export default function AdminDashboard() {
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
     b.author.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
-    b.barcode.toLowerCase().includes(bookSearchQuery.toLowerCase())
+    b.barcode.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
+    b.book_number.toLowerCase().includes(bookSearchQuery.toLowerCase())
   );
 
   const filteredMembers = members.filter(m => 
@@ -433,8 +433,8 @@ export default function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="isbn">ISBN</Label>
-                        <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
+                        <Label htmlFor="book_number">Book Number</Label>
+                        <Input id="book_number" value={newBook.book_number} onChange={e => setNewBook({...newBook, book_number: e.target.value})} />
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -630,7 +630,7 @@ export default function AdminDashboard() {
                     <div className="relative w-full md:w-72">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        placeholder="Search title, barcode..." 
+                        placeholder="Search title, barcode, book number..." 
                         className="pl-9" 
                         value={bookSearchQuery}
                         onChange={e => setBookSearchQuery(e.target.value)}

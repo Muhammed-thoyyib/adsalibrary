@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -54,7 +53,7 @@ export default function CatalogPage() {
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
-    isbn: '',
+    book_number: '',
     barcode: '',
     category: '',
     total_copies: 1,
@@ -70,7 +69,7 @@ export default function CatalogPage() {
     const matchesSearch = book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          book.barcode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         book.isbn.includes(searchQuery);
+                         book.book_number.includes(searchQuery);
     const matchesCategory = selectedCategory ? book.category === selectedCategory : true;
     return matchesSearch && matchesCategory;
   });
@@ -127,7 +126,7 @@ export default function CatalogPage() {
     addBook({
       title: newBook.title,
       author: newBook.author,
-      isbn: newBook.isbn,
+      book_number: newBook.book_number,
       barcode: newBook.barcode,
       category: newBook.category || 'Fiction',
       total_copies: newBook.total_copies,
@@ -137,7 +136,7 @@ export default function CatalogPage() {
       keyThemes: newBook.keyThemes
     });
     setIsAddingBook(false);
-    setNewBook({ title: '', author: '', isbn: '', barcode: '', category: '', total_copies: 1, location: '', description: '', summary: '', keyThemes: [] });
+    setNewBook({ title: '', author: '', book_number: '', barcode: '', category: '', total_copies: 1, location: '', description: '', summary: '', keyThemes: [] });
     toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
   };
 
@@ -179,8 +178,8 @@ export default function CatalogPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="isbn">ISBN</Label>
-                          <Input id="isbn" value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
+                          <Label htmlFor="book_number">Book Number</Label>
+                          <Input id="book_number" value={newBook.book_number} onChange={e => setNewBook({...newBook, book_number: e.target.value})} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="barcode">Barcode</Label>
@@ -262,7 +261,7 @@ export default function CatalogPage() {
                   <Search className="h-4 w-4" /> Search
                 </h3>
                 <Input 
-                  placeholder="Title, author, barcode..." 
+                  placeholder="Title, author, barcode, book number..." 
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                 />
@@ -372,8 +371,8 @@ export default function CatalogPage() {
                                   <div className="flex items-center gap-3">
                                     <Tag className="h-5 w-5 text-muted-foreground" />
                                     <div>
-                                      <p className="text-xs text-muted-foreground">ISBN</p>
-                                      <p className="text-sm font-medium">{book.isbn}</p>
+                                      <p className="text-xs text-muted-foreground">Book Number</p>
+                                      <p className="text-sm font-medium">{book.book_number}</p>
                                     </div>
                                   </div>
                                 </div>
