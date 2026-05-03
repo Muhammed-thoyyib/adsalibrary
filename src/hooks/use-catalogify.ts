@@ -13,7 +13,7 @@ export type LoginCredentials = {
 };
 
 const LOAN_DAYS = 14; // 2 weeks
-const FLAT_FINE = 5; // ₹5 base fine per week
+const WEEKLY_FINE = 5; // ₹5 per week
 
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
@@ -74,7 +74,8 @@ export function useCatalogify() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays > 0) {
-      return Math.ceil(diffDays / 7) * FLAT_FINE;
+      // ₹5 for first week, increases by ₹5 every subsequent week
+      return Math.ceil(diffDays / 7) * WEEKLY_FINE;
     }
     return 0;
   }, []);
@@ -125,7 +126,7 @@ export function useCatalogify() {
     return true;
   };
 
-  const returnBook = (transactionId: string) => {
+  const checkInBook = (transactionId: string) => {
     const transaction = transactions.find(t => t.id === transactionId);
     if (!transaction || transaction.status === 'returned') return;
 
@@ -154,7 +155,7 @@ export function useCatalogify() {
     addMember,
     deleteMember,
     checkOutBook,
-    returnBook,
+    checkInBook,
     calculateFine,
   };
 }

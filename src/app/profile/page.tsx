@@ -151,7 +151,7 @@ export default function ProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline">Past Activity</CardTitle>
-                  <CardDescription>A record of your returned books.</CardDescription>
+                  <CardDescription>A record of your checked in books.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {pastBorrowed.length > 0 ? (
@@ -159,7 +159,7 @@ export default function ProfilePage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Book Title</TableHead>
-                          <TableHead>Returned On</TableHead>
+                          <TableHead>Checked In On</TableHead>
                           <TableHead>Fine Paid</TableHead>
                         </TableRow>
                       </TableHeader>

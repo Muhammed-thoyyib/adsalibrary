@@ -69,7 +69,7 @@ export default function AdminDashboard() {
     deleteBook, 
     addMember, 
     deleteMember, 
-    returnBook,
+    checkInBook,
     checkOutBook,
     calculateFine
   } = useCatalogify();
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   
-  const [returningTransaction, setReturningTransaction] = useState<Transaction | null>(null);
+  const [checkingInTransaction, setCheckingInTransaction] = useState<Transaction | null>(null);
   
   // Scanner state
   const [isScanning, setIsScanning] = useState(false);
@@ -201,18 +201,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReturnConfirm = () => {
-    if (!returningTransaction) return;
-    returnBook(returningTransaction.id);
+  const handleCheckInConfirm = () => {
+    if (!checkingInTransaction) return;
+    checkInBook(checkingInTransaction.id);
     toast({ 
-      title: "Book Returned", 
-      description: "The book has been marked as returned." 
+      title: "Book Checked In", 
+      description: "The book has been marked as checked in." 
     });
-    setReturningTransaction(null);
+    setCheckingInTransaction(null);
   };
 
-  const initiateReturn = (transaction: Transaction) => {
-    setReturningTransaction(transaction);
+  const initiateCheckIn = (transaction: Transaction) => {
+    setCheckingInTransaction(transaction);
   };
 
   const onBarcodeScan = (scannedBarcode: string) => {
@@ -508,32 +508,32 @@ export default function AdminDashboard() {
             </div>
           </header>
 
-          <Dialog open={!!returningTransaction} onOpenChange={(open) => !open && setReturningTransaction(null)}>
+          <Dialog open={!!checkingInTransaction} onOpenChange={(open) => !open && setCheckingInTransaction(null)}>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Undo2 className="h-5 w-5 text-accent" /> Confirm Return
+                  <Undo2 className="h-5 w-5 text-accent" /> Confirm Check In
                 </DialogTitle>
                 <DialogDescription>
-                  Are you sure you want to mark this book as returned?
+                  Are you sure you want to mark this book as checked in?
                 </DialogDescription>
               </DialogHeader>
-              {returningTransaction && (
+              {checkingInTransaction && (
                 <div className="py-4 space-y-4">
                   <div className="p-3 bg-secondary/30 rounded-lg text-sm">
-                    <p className="font-semibold">{books.find(b => b.id === returningTransaction.book_id)?.title}</p>
-                    <p className="text-xs text-muted-foreground">Checked out to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
-                    {calculateFine(returningTransaction) > 0 && (
+                    <p className="font-semibold">{books.find(b => b.id === checkingInTransaction.book_id)?.title}</p>
+                    <p className="text-xs text-muted-foreground">Checked out to: {members.find(m => m.id === checkingInTransaction.member_id)?.name}</p>
+                    {calculateFine(checkingInTransaction) > 0 && (
                       <div className="mt-2 flex items-center gap-1 text-destructive font-bold">
-                        <AlertCircle className="h-3 w-3" /> Fine: ₹{calculateFine(returningTransaction)}
+                        <AlertCircle className="h-3 w-3" /> Fine: ₹{calculateFine(checkingInTransaction)}
                       </div>
                     )}
                   </div>
                 </div>
               )}
               <DialogFooter>
-                <Button variant="ghost" onClick={() => setReturningTransaction(null)}>Cancel</Button>
-                <Button className="bg-primary text-white" onClick={handleReturnConfirm}>Confirm Return</Button>
+                <Button variant="ghost" onClick={() => setCheckingInTransaction(null)}>Cancel</Button>
+                <Button className="bg-primary text-white" onClick={handleCheckInConfirm}>Confirm Check In</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -785,16 +785,16 @@ export default function AdminDashboard() {
                                               </div>
                                               <div className="flex flex-col items-end gap-2">
                                                 <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
-                                                  {t.status === 'issued' ? 'checked out' : t.status}
+                                                  {t.status === 'issued' ? 'checked out' : 'checked in'}
                                                 </Badge>
                                                 {t.status === 'issued' && (
                                                   <Button 
                                                     variant="ghost" 
                                                     size="sm" 
                                                     className="h-7 text-xs text-accent flex items-center gap-1 hover:bg-accent/10"
-                                                    onClick={() => initiateReturn(t)}
+                                                    onClick={() => initiateCheckIn(t)}
                                                   >
-                                                    <Undo2 className="h-3 w-3" /> Process Return
+                                                    <Undo2 className="h-3 w-3" /> Process Check In
                                                   </Button>
                                                 )}
                                               </div>
@@ -877,10 +877,10 @@ export default function AdminDashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
-                                  onClick={() => initiateReturn(t)}
+                                  onClick={() => initiateCheckIn(t)}
                                   className="border-accent text-accent hover:bg-accent/10"
                                 >
-                                  Return
+                                  Check In
                                 </Button>
                               </TableCell>
                             </TableRow>
@@ -941,10 +941,10 @@ export default function AdminDashboard() {
                                 <Button 
                                   size="sm" 
                                   variant="destructive" 
-                                  onClick={() => initiateReturn(t)}
+                                  onClick={() => initiateCheckIn(t)}
                                   className="flex items-center gap-1"
                                 >
-                                  <Undo2 className="h-3 w-3" /> Return
+                                  <Undo2 className="h-3 w-3" /> Check In
                                 </Button>
                               </TableCell>
                             </TableRow>
@@ -1003,7 +1003,7 @@ export default function AdminDashboard() {
                             <TableCell>
                               <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit text-[10px] uppercase tracking-tighter">
                                 {t.status === 'returned' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                                {t.status === 'issued' ? 'checked out' : t.status}
+                                {t.status === 'issued' ? 'checked out' : 'checked in'}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs">
@@ -1011,8 +1011,8 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               {t.status === 'issued' && (
-                                <Button size="sm" onClick={() => initiateReturn(t)} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                                  Return
+                                <Button size="sm" onClick={() => initiateCheckIn(t)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                                  Check In
                                 </Button>
                               )}
                             </TableCell>
