@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Book, Member, Transaction, INITIAL_BOOKS, INITIAL_MEMBERS, INITIAL_TRANSACTIONS } from '@/lib/mock-data';
 
 export type LoginCredentials = {
@@ -59,7 +60,8 @@ export function useCatalogify() {
     localStorage.removeItem('adsalibrary_user');
   };
 
-  const calculateFine = (transaction: Transaction): number => {
+  const calculateFine = useCallback((transaction: Transaction | null): number => {
+    if (!transaction) return 0;
     const dueDate = new Date(transaction.due_date);
     const compareDate = transaction.status === 'returned' && transaction.return_date 
       ? new Date(transaction.return_date) 
@@ -73,7 +75,7 @@ export function useCatalogify() {
       return FLAT_FINE;
     }
     return 0;
-  };
+  }, []);
 
   const addBook = (book: Omit<Book, 'id'>) => {
     const newBook = { ...book, id: Math.random().toString() };
