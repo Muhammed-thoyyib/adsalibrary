@@ -12,8 +12,8 @@ export type LoginCredentials = {
 };
 
 const LOAN_DAYS = 14; // 2 weeks
-const BASE_OVERDUE_FINE = 15;
-const WEEKLY_INCREMENT = 5;
+const BASE_OVERDUE_FINE = 5;
+const WEEKLY_INCREMENT = 15;
 
 export function useCatalogify() {
   const [books, setBooks] = useState<Book[]>(INITIAL_BOOKS);
@@ -102,7 +102,7 @@ export function useCatalogify() {
     const diffTime = targetDate.getTime() - due.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    // Base fine + Rs 5 for each full additional week
+    // Base fine (Rs 5) + Rs 15 for each full additional week
     const additionalWeeks = Math.floor(diffDays / 7);
     return BASE_OVERDUE_FINE + (additionalWeeks * WEEKLY_INCREMENT);
   };
