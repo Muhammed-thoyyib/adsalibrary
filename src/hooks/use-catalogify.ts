@@ -67,7 +67,6 @@ export function useCatalogify() {
       ? new Date(transaction.return_date) 
       : new Date();
     
-    // Normalize to midnight for fair comparison
     dueDate.setHours(0, 0, 0, 0);
     compareDate.setHours(0, 0, 0, 0);
 
@@ -75,7 +74,6 @@ export function useCatalogify() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays > 0) {
-      // Rs 5 for the first week, and increases by Rs 5 every week (or part thereof)
       return Math.ceil(diffDays / 7) * FLAT_FINE;
     }
     return 0;
@@ -105,7 +103,7 @@ export function useCatalogify() {
     setMembers(prev => prev.filter(m => m.id !== id));
   };
 
-  const issueBook = (bookId: string, memberId: string) => {
+  const checkOutBook = (bookId: string, memberId: string) => {
     const book = books.find(b => b.id === bookId);
     if (!book || book.available_copies <= 0) return false;
 
@@ -155,7 +153,7 @@ export function useCatalogify() {
     deleteBook,
     addMember,
     deleteMember,
-    issueBook,
+    checkOutBook,
     returnBook,
     calculateFine,
   };

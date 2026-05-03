@@ -60,8 +60,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             isActive: pathname === "/admin",
           },
           {
-            title: "Overdue",
-            url: "/admin?tab=overdue",
+            title: "Checked Out",
+            url: "/admin?tab=active",
             icon: AlertCircle,
             isActive: pathname === "/admin" && overdueCount > 0,
             badge: overdueCount > 0 ? overdueCount : undefined,

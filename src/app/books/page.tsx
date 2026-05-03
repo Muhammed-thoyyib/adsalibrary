@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -38,7 +39,7 @@ import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator
 import { useToast } from '@/hooks/use-toast';
 
 export default function CatalogPage() {
-  const { books, currentUser, issueBook, addBook } = useCatalogify();
+  const { books, currentUser, checkOutBook, addBook } = useCatalogify();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const initialCategory = searchParams.get('category') || '';
@@ -74,12 +75,12 @@ export default function CatalogPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const handleIssue = (bookId: string) => {
+  const handleCheckout = (bookId: string) => {
     if (!currentUser) {
       window.location.href = '/login';
       return;
     }
-    issueBook(bookId, currentUser.id);
+    checkOutBook(bookId, currentUser.id);
   };
 
   const handleAiSummary = async () => {
@@ -309,7 +310,7 @@ export default function CatalogPage() {
                           {book.available_copies > 0 ? (
                             <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">Available</Badge>
                           ) : (
-                            <Badge variant="destructive">Issued</Badge>
+                            <Badge variant="destructive">Checked Out</Badge>
                           )}
                         </div>
                         <Dialog>
@@ -386,9 +387,9 @@ export default function CatalogPage() {
                                 <Button 
                                   className="bg-accent text-accent-foreground hover:bg-accent/90"
                                   disabled={book.available_copies <= 0}
-                                  onClick={() => handleIssue(book.id)}
+                                  onClick={() => handleCheckout(book.id)}
                                 >
-                                  Issue Now
+                                  Check Out Now
                                 </Button>
                               </div>
                             </div>
@@ -408,9 +409,9 @@ export default function CatalogPage() {
                           variant={book.available_copies > 0 ? 'default' : 'outline'}
                           className={book.available_copies > 0 ? "bg-primary" : ""}
                           disabled={book.available_copies <= 0}
-                          onClick={() => handleIssue(book.id)}
+                          onClick={() => handleCheckout(book.id)}
                         >
-                          {book.available_copies > 0 ? "Borrow" : "Unavailable"}
+                          {book.available_copies > 0 ? "Check Out" : "Unavailable"}
                         </Button>
                       </CardFooter>
                     </Card>
@@ -440,15 +441,15 @@ export default function CatalogPage() {
                           <div className="hidden md:flex flex-col items-end">
                             <span className="text-xs text-muted-foreground">Status</span>
                             <span className={book.available_copies > 0 ? 'text-green-600 text-sm font-medium' : 'text-destructive text-sm font-medium'}>
-                              {book.available_copies > 0 ? 'Available' : 'Issued'}
+                              {book.available_copies > 0 ? 'Available' : 'Checked Out'}
                             </span>
                           </div>
                           <Button 
                             size="sm" 
                             disabled={book.available_copies <= 0}
-                            onClick={() => handleIssue(book.id)}
+                            onClick={() => handleCheckout(book.id)}
                           >
-                            Borrow
+                            Check Out
                           </Button>
                         </div>
                       </CardContent>

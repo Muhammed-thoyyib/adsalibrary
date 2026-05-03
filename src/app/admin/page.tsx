@@ -70,7 +70,7 @@ export default function AdminDashboard() {
     addMember, 
     deleteMember, 
     returnBook,
-    issueBook,
+    checkOutBook,
     calculateFine
   } = useCatalogify();
   
@@ -80,14 +80,14 @@ export default function AdminDashboard() {
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [isAddingBook, setIsAddingBook] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
-  const [isIssuingBook, setIsIssuingBook] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   
   const [returningTransaction, setReturningTransaction] = useState<Transaction | null>(null);
   
   // Scanner state
   const [isScanning, setIsScanning] = useState(false);
-  const [scanTarget, setScanTarget] = useState<'add' | 'issue' | null>(null);
+  const [scanTarget, setScanTarget] = useState<'add' | 'checkout' | null>(null);
 
   const [newBook, setNewBook] = useState({
     title: '',
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
     status: 'active' as 'active' | 'suspended'
   });
 
-  const [issueData, setIssueData] = useState({
+  const [checkoutData, setCheckoutData] = useState({
     bookId: '',
     memberId: ''
   });
@@ -186,18 +186,18 @@ export default function AdminDashboard() {
     toast({ title: "Member Registered", description: `Member ${newMember.name} has been added to ADSALIBRARY.` });
   };
 
-  const handleIssueSubmit = () => {
-    if (!issueData.bookId || !issueData.memberId) {
+  const handleCheckoutSubmit = () => {
+    if (!checkoutData.bookId || !checkoutData.memberId) {
       toast({ title: "Error", description: "Please select both a book and a member.", variant: "destructive" });
       return;
     }
-    const success = issueBook(issueData.bookId, issueData.memberId);
+    const success = checkOutBook(checkoutData.bookId, checkoutData.memberId);
     if (success) {
-      toast({ title: "Success", description: "Book issued successfully." });
-      setIsIssuingBook(false);
-      setIssueData({ bookId: '', memberId: '' });
+      toast({ title: "Success", description: "Book checked out successfully." });
+      setIsCheckingOut(false);
+      setCheckoutData({ bookId: '', memberId: '' });
     } else {
-      toast({ title: "Error", description: "Could not issue book. Check availability.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not check out book. Check availability.", variant: "destructive" });
     }
   };
 
@@ -219,11 +219,11 @@ export default function AdminDashboard() {
     if (scanTarget === 'add') {
       setNewBook(prev => ({ ...prev, barcode: scannedBarcode.toUpperCase() }));
       toast({ title: "Barcode Scanned", description: `Added barcode: ${scannedBarcode}` });
-    } else if (scanTarget === 'issue') {
+    } else if (scanTarget === 'checkout') {
       const foundBook = books.find(b => b.barcode.toUpperCase() === scannedBarcode.toUpperCase());
       if (foundBook) {
         if (foundBook.available_copies > 0) {
-          setIssueData(prev => ({ ...prev, bookId: foundBook.id }));
+          setCheckoutData(prev => ({ ...prev, bookId: foundBook.id }));
           toast({ title: "Book Found", description: `Selected: ${foundBook.title}` });
         } else {
           toast({ variant: "destructive", title: "Book Unavailable", description: "This book is currently out of stock." });
@@ -299,19 +299,19 @@ export default function AdminDashboard() {
               <p className="text-muted-foreground">Manage ADSALIBRARY assets, members, and tracking.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Dialog open={isIssuingBook} onOpenChange={setIsIssuingBook}>
+              <Dialog open={isCheckingOut} onOpenChange={setIsCheckingOut}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="border-accent text-accent hover:bg-accent/5">
-                    <HandHelping className="mr-2 h-4 w-4" /> Issue Book
+                    <HandHelping className="mr-2 h-4 w-4" /> Check Out Book
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>Issue Book to Member</DialogTitle>
+                    <DialogTitle>Check Out Book to Member</DialogTitle>
                     <DialogDescription>Search for a book (or scan) and a member to record a new loan.</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    {isScanning && scanTarget === 'issue' ? (
+                    {isScanning && scanTarget === 'checkout' ? (
                       <BarcodeScanner 
                         onScan={onBarcodeScan} 
                         onClose={() => { setIsScanning(false); setScanTarget(null); }} 
@@ -319,18 +319,18 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="grid gap-2">
                         <div className="flex items-center justify-between">
-                          <Label htmlFor="issue-book">Search Book</Label>
+                          <Label htmlFor="checkout-book">Search Book</Label>
                           <Button 
                             variant="ghost" 
                             size="sm" 
                             className="h-8 text-accent gap-1"
-                            onClick={() => { setIsScanning(true); setScanTarget('issue'); }}
+                            onClick={() => { setIsScanning(true); setScanTarget('checkout'); }}
                           >
                             <Scan className="h-3 w-3" /> Scan Barcode
                           </Button>
                         </div>
-                        <Select value={issueData.bookId} onValueChange={(val) => setIssueData({...issueData, bookId: val})}>
-                          <SelectTrigger id="issue-book">
+                        <Select value={checkoutData.bookId} onValueChange={(val) => setCheckoutData({...checkoutData, bookId: val})}>
+                          <SelectTrigger id="checkout-book">
                             <SelectValue placeholder="Search by title or barcode" />
                           </SelectTrigger>
                           <SelectContent>
@@ -344,9 +344,9 @@ export default function AdminDashboard() {
                       </div>
                     )}
                     <div className="grid gap-2">
-                      <Label htmlFor="issue-member">Search Member</Label>
-                      <Select value={issueData.memberId} onValueChange={(val) => setIssueData({...issueData, memberId: val})}>
-                        <SelectTrigger id="issue-member">
+                      <Label htmlFor="checkout-member">Search Member</Label>
+                      <Select value={checkoutData.memberId} onValueChange={(val) => setCheckoutData({...checkoutData, memberId: val})}>
+                        <SelectTrigger id="checkout-member">
                           <SelectValue placeholder="Search by name or ID" />
                         </SelectTrigger>
                         <SelectContent>
@@ -360,8 +360,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="ghost" onClick={() => setIsIssuingBook(false)}>Cancel</Button>
-                    <Button className="bg-accent text-accent-foreground" onClick={handleIssueSubmit}>Confirm Issue</Button>
+                    <Button variant="ghost" onClick={() => setIsCheckingOut(false)}>Cancel</Button>
+                    <Button className="bg-accent text-accent-foreground" onClick={handleCheckoutSubmit}>Confirm Check Out</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -522,7 +522,7 @@ export default function AdminDashboard() {
                 <div className="py-4 space-y-4">
                   <div className="p-3 bg-secondary/30 rounded-lg text-sm">
                     <p className="font-semibold">{books.find(b => b.id === returningTransaction.book_id)?.title}</p>
-                    <p className="text-xs text-muted-foreground">Issued to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
+                    <p className="text-xs text-muted-foreground">Checked out to: {members.find(m => m.id === returningTransaction.member_id)?.name}</p>
                     {calculateFine(returningTransaction) > 0 && (
                       <div className="mt-2 flex items-center gap-1 text-destructive font-bold">
                         <AlertCircle className="h-3 w-3" /> Fine: ₹{calculateFine(returningTransaction)}
@@ -564,7 +564,7 @@ export default function AdminDashboard() {
             <Card className="hover:border-primary/50 transition-colors shadow-sm">
               <CardContent className="pt-6 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Issues</p>
+                  <p className="text-sm font-medium text-muted-foreground">Checked Out</p>
                   <p className="text-2xl font-bold">{activeTransactions.length}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-xl">
@@ -589,7 +589,7 @@ export default function AdminDashboard() {
             <TabsList className="mb-6 bg-secondary/50 p-1">
               <TabsTrigger value="books">Inventory</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
-              <TabsTrigger value="active">Active Issues</TabsTrigger>
+              <TabsTrigger value="active">Checked Out</TabsTrigger>
               <TabsTrigger value="overdue">
                 Overdue {overdueCount > 0 && <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center p-0 text-[10px]">{overdueCount}</Badge>}
               </TabsTrigger>
@@ -776,7 +776,7 @@ export default function AdminDashboard() {
                                               <div className="flex flex-col gap-1">
                                                 <span className="font-medium">{book?.title || 'Unknown Book'}</span>
                                                 <div className="flex flex-col text-[10px] text-muted-foreground space-y-0.5">
-                                                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Issued: {t.issue_date}</span>
+                                                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Checked Out: {t.issue_date}</span>
                                                   <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive font-bold' : ''}`}>
                                                     <Clock className="h-3 w-3" /> Due: {t.due_date}
                                                   </span>
@@ -785,7 +785,7 @@ export default function AdminDashboard() {
                                               </div>
                                               <div className="flex flex-col items-end gap-2">
                                                 <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="text-[10px]">
-                                                  {t.status}
+                                                  {t.status === 'issued' ? 'checked out' : t.status}
                                                 </Badge>
                                                 {t.status === 'issued' && (
                                                   <Button 
@@ -826,7 +826,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="font-headline text-xl">Active Issues</CardTitle>
+                    <CardTitle className="font-headline text-xl">Currently Checked Out</CardTitle>
                     <CardDescription>All books currently in possession of members.</CardDescription>
                   </div>
                   <div className="relative w-full md:w-72">
@@ -844,7 +844,7 @@ export default function AdminDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Book & Barcode</TableHead>
-                        <TableHead>Issued To</TableHead>
+                        <TableHead>Checked Out To</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Fine</TableHead>
                         <TableHead className="text-right">Action</TableHead>
@@ -889,7 +889,7 @@ export default function AdminDashboard() {
                       ) : (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">
-                            No active issues found.
+                            No books currently checked out.
                           </TableCell>
                         </TableRow>
                       )}
@@ -910,7 +910,7 @@ export default function AdminDashboard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Book & Barcode</TableHead>
-                        <TableHead>Issued To</TableHead>
+                        <TableHead>Checked Out To</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Fine</TableHead>
                         <TableHead className="text-right">Action</TableHead>
@@ -1003,7 +1003,7 @@ export default function AdminDashboard() {
                             <TableCell>
                               <Badge variant={t.status === 'returned' ? 'outline' : 'default'} className="flex items-center gap-1 w-fit text-[10px] uppercase tracking-tighter">
                                 {t.status === 'returned' ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                                {t.status}
+                                {t.status === 'issued' ? 'checked out' : t.status}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs">

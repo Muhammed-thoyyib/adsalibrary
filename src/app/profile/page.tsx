@@ -81,7 +81,7 @@ export default function ProfilePage() {
                       <Book className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-xs opacity-80 uppercase font-semibold">Borrowed</p>
+                      <p className="text-xs opacity-80 uppercase font-semibold">Checked Out</p>
                       <p className="text-2xl font-bold">{activeBorrowed.length}</p>
                     </div>
                   </CardContent>
@@ -105,7 +105,7 @@ export default function ProfilePage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="font-headline">Current Borrowings</CardTitle>
+                    <CardTitle className="font-headline">Current Loans</CardTitle>
                     <CardDescription>14-day loan limit. Overdue fine: ₹5/week.</CardDescription>
                   </div>
                   <Clock className="h-5 w-5 text-muted-foreground" />
@@ -142,7 +142,7 @@ export default function ProfilePage() {
                     </Table>
                   ) : (
                     <div className="py-10 text-center text-muted-foreground italic">
-                      You haven&apos;t borrowed any books yet.
+                      You haven&apos;t checked out any books yet.
                     </div>
                   )}
                 </CardContent>
