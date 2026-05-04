@@ -23,7 +23,6 @@ import {
   Calendar,
   HandHelping,
   Undo2,
-  Scan,
   IndianRupee
 } from 'lucide-react';
 import { useCatalogify } from '@/hooks/use-catalogify';
@@ -58,7 +57,6 @@ import {
 import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
 import { useToast } from '@/hooks/use-toast';
 import { Member, Transaction } from '@/lib/mock-data';
-import { BarcodeScanner } from '@/components/barcode-scanner';
 
 export default function AdminDashboard() {
   const { 
@@ -81,13 +79,8 @@ export default function AdminDashboard() {
   const [isAddingBook, setIsAddingBook] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [viewingMember, setViewingMember] = useState<Member | null>(null);
   
   const [checkingInTransaction, setCheckingInTransaction] = useState<Transaction | null>(null);
-  
-  // Scanner state
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanTarget, setScanTarget] = useState<'add' | 'checkout' | null>(null);
 
   const [newBook, setNewBook] = useState({
     title: '',
@@ -215,27 +208,6 @@ export default function AdminDashboard() {
     setCheckingInTransaction(transaction);
   };
 
-  const onBarcodeScan = (scannedBarcode: string) => {
-    if (scanTarget === 'add') {
-      setNewBook(prev => ({ ...prev, barcode: scannedBarcode.toUpperCase() }));
-      toast({ title: "Barcode Scanned", description: `Added barcode: ${scannedBarcode}` });
-    } else if (scanTarget === 'checkout') {
-      const foundBook = books.find(b => b.barcode.toUpperCase() === scannedBarcode.toUpperCase());
-      if (foundBook) {
-        if (foundBook.available_copies > 0) {
-          setCheckoutData(prev => ({ ...prev, bookId: foundBook.id }));
-          toast({ title: "Book Found", description: `Selected: ${foundBook.title}` });
-        } else {
-          toast({ variant: "destructive", title: "Book Unavailable", description: "This book is currently out of stock." });
-        }
-      } else {
-        toast({ variant: "destructive", title: "Unknown Barcode", description: "No book found with this barcode in the catalog." });
-      }
-    }
-    setIsScanning(false);
-    setScanTarget(null);
-  };
-
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
     b.author.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
@@ -308,41 +280,24 @@ export default function AdminDashboard() {
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle>Check Out Book to Member</DialogTitle>
-                    <DialogDescription>Search for a book (or scan) and a member to record a new loan.</DialogDescription>
+                    <DialogDescription>Search for a book and a member to record a new loan.</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    {isScanning && scanTarget === 'checkout' ? (
-                      <BarcodeScanner 
-                        onScan={onBarcodeScan} 
-                        onClose={() => { setIsScanning(false); setScanTarget(null); }} 
-                      />
-                    ) : (
-                      <div className="grid gap-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="checkout-book">Search Book</Label>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 text-accent gap-1"
-                            onClick={() => { setIsScanning(true); setScanTarget('checkout'); }}
-                          >
-                            <Scan className="h-3 w-3" /> Scan Barcode
-                          </Button>
-                        </div>
-                        <Select value={checkoutData.bookId} onValueChange={(val) => setCheckoutData({...checkoutData, bookId: val})}>
-                          <SelectTrigger id="checkout-book">
-                            <SelectValue placeholder="Search by title or barcode" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {books.map(book => (
-                              <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
-                                {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    <div className="grid gap-2">
+                      <Label htmlFor="checkout-book">Search Book</Label>
+                      <Select value={checkoutData.bookId} onValueChange={(val) => setCheckoutData({...checkoutData, bookId: val})}>
+                        <SelectTrigger id="checkout-book">
+                          <SelectValue placeholder="Search by title or barcode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {books.map(book => (
+                            <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
+                              {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid gap-2">
                       <Label htmlFor="checkout-member">Search Member</Label>
                       <Select value={checkoutData.memberId} onValueChange={(val) => setCheckoutData({...checkoutData, memberId: val})}>
@@ -414,7 +369,7 @@ export default function AdminDashboard() {
                   <DialogHeader>
                     <DialogTitle className="font-headline text-2xl">Add Library Book</DialogTitle>
                     <DialogDescription>
-                      Enter the book details. Scan the barcode for accuracy.
+                      Enter the book details for registration.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -434,30 +389,11 @@ export default function AdminDashboard() {
                         <Input id="book_number" value={newBook.book_number} onChange={e => setNewBook({...newBook, book_number: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="barcode">Barcode</Label>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-6 text-[10px] gap-1 px-1.5"
-                            onClick={() => { setIsScanning(true); setScanTarget('add'); }}
-                          >
-                            <Scan className="h-3 w-3" /> Scan
-                          </Button>
-                        </div>
+                        <Label htmlFor="barcode">Barcode</Label>
                         <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value.toUpperCase()})} />
                       </div>
                     </div>
                     
-                    {isScanning && scanTarget === 'add' && (
-                      <div className="col-span-2 border rounded-lg p-2 bg-muted/20">
-                        <BarcodeScanner 
-                          onScan={onBarcodeScan} 
-                          onClose={() => { setIsScanning(false); setScanTarget(null); }} 
-                        />
-                      </div>
-                    )}
-
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="category">Category</Label>
@@ -714,7 +650,7 @@ export default function AdminDashboard() {
                           <TableCell className="text-right space-x-1">
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setViewingMember(member)}>
+                                <Button variant="ghost" size="icon">
                                   <Eye className="h-4 w-4 text-muted-foreground" />
                                 </Button>
                               </DialogTrigger>
