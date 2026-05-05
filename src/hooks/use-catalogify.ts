@@ -98,6 +98,7 @@ export function useCatalogify() {
       await signInWithEmailAndPassword(auth, email, password);
       return true;
     } catch (error) {
+      console.error("Login error:", error);
       return false;
     }
   };
@@ -193,7 +194,11 @@ export function useCatalogify() {
     logout,
     addBook,
     deleteBook: (id: string) => deleteDocumentNonBlocking(doc(firestore, 'books', id)),
-    addMember: (data: any) => setDocumentNonBlocking(doc(collection(firestore, 'members')), data, { merge: true }),
+    addMember: (data: any) => {
+      // If we have a specific ID (like a UID), use it, otherwise let Firestore generate
+      const docRef = data.id ? doc(firestore, 'members', data.id) : doc(collection(firestore, 'members'));
+      setDocumentNonBlocking(docRef, { ...data, id: docRef.id, updatedAt: serverTimestamp() }, { merge: true });
+    },
     deleteMember: (id: string) => deleteDocumentNonBlocking(doc(firestore, 'members', id)),
     checkOutBook,
     checkInBook,

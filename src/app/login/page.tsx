@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -39,7 +38,7 @@ export default function LoginPage() {
     if (!email || !password) {
       toast({
         title: "Missing fields",
-        description: "Please enter both email and password.",
+        description: "Please enter both your email address and password.",
         variant: "destructive"
       });
       return;
@@ -54,15 +53,6 @@ export default function LoginPage() {
       return;
     }
 
-    if (password.length < 4) {
-      toast({
-        title: "Weak Password",
-        description: "Password should be at least 4 characters for testing.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setIsLoading(true);
     const success = await login(email, password);
     setIsLoading(false);
@@ -70,13 +60,13 @@ export default function LoginPage() {
     if (success) {
       toast({
         title: "Welcome Back",
-        description: `Successfully signed in as ${role}.`,
+        description: `Successfully signed in as ${role === 'admin' ? 'Librarian' : 'Member'}.`,
       });
       router.push(role === 'admin' ? '/admin' : '/books');
     } else {
       toast({
         title: "Authentication Failed",
-        description: "No account found with these credentials. Please check with your administrator.",
+        description: "Invalid credentials. Please check your email and password.",
         variant: "destructive"
       });
     }
@@ -96,7 +86,7 @@ export default function LoginPage() {
               </div>
               <CardTitle className="text-2xl font-headline font-bold">ADSALIBRARY Portal</CardTitle>
               <CardDescription>
-                Access your smart library management dashboard
+                Sign in with your email to manage your library account
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -118,7 +108,7 @@ export default function LoginPage() {
                       <Input 
                         id="email" 
                         type="email"
-                        placeholder="e.g. adsa@adsalibrary.com" 
+                        placeholder="your@email.com" 
                         className="pl-10"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -164,7 +154,7 @@ export default function LoginPage() {
                 </div>
               </Tabs>
             </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className="flex flex-col space-y-4 border-t pt-4">
               <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <Info className="h-3 w-3" />
                 <span>Forgot password? Contact library support.</span>
@@ -181,23 +171,16 @@ export default function LoginPage() {
             <PopoverContent className="w-80">
               <div className="grid gap-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium leading-none">Demo Credentials</h4>
+                  <h4 className="font-medium leading-none">Access Guide</h4>
                   <p className="text-sm text-muted-foreground">
-                    Use these accounts to test the prototype features.
+                    Use your registered email and the password provided by your library administrator.
                   </p>
                 </div>
                 <div className="grid gap-2 text-xs">
                   <div className="flex items-center justify-between p-2 bg-secondary/50 rounded">
-                    <span className="font-semibold">Librarian:</span>
-                    <span className="font-mono">adsa@adsalibrary.com</span>
+                    <span className="font-semibold">Format:</span>
+                    <span className="font-mono italic">user@domain.com</span>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-secondary/50 rounded">
-                    <span className="font-semibold">Member:</span>
-                    <span className="font-mono">alice@example.com</span>
-                  </div>
-                  <p className="text-[10px] italic text-muted-foreground">
-                    * Note: Passwords must be created in Firebase Console for these emails to work.
-                  </p>
                 </div>
               </div>
             </PopoverContent>
