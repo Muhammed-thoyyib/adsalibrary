@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { 
   useFirestore, 
   useAuth, 
@@ -69,26 +70,41 @@ export function useCatalogify() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
 
-  // Memoized Collections
+  // 1. Public Collections (Accessible to everyone)
   const booksQuery = useMemoFirebase(() => collection(firestore, 'books'), [firestore]);
   const { data: books, isLoading: isBooksLoading } = useCollection<Book>(booksQuery);
 
-  const membersQuery = useMemoFirebase(() => collection(firestore, 'members'), [firestore]);
-  const { data: members, isLoading: isMembersLoading } = useCollection<Member>(membersQuery);
-
-  const transactionsQuery = useMemoFirebase(() => collection(firestore, 'transactions'), [firestore]);
-  const { data: transactions, isLoading: isTransactionsLoading } = useCollection<Transaction>(transactionsQuery);
-
-  // Current Member Data
+  // 2. Current Member Data (Needed to determine role)
   const memberRef = useMemoFirebase(() => user ? doc(firestore, 'members', user.uid) : null, [firestore, user]);
-  const { data: currentMember } = useDoc<Member>(memberRef);
+  const { data: currentMember, isLoading: isCurrentMemberLoading } = useDoc<Member>(memberRef);
+
+  const isAdmin = currentMember?.role === 'admin';
+
+  // 3. Admin-Only Collections
+  const allMembersQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdmin) return null;
+    return collection(firestore, 'members');
+  }, [firestore, isAdmin]);
+  const { data: allMembers, isLoading: isMembersLoading } = useCollection<Member>(allMembersQuery);
+
+  const allTransactionsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdmin) return null;
+    return collection(firestore, 'transactions');
+  }, [firestore, isAdmin]);
+  const { data: allTransactions, isLoading: isAllTransactionsLoading } = useCollection<Transaction>(allTransactionsQuery);
+
+  // 4. User-Specific Collections (QAPs)
+  const userTransactionsQuery = useMemoFirebase(() => {
+    if (!firestore || !user || isAdmin) return null;
+    return query(collection(firestore, 'transactions'), where('memberId', '==', user.uid));
+  }, [firestore, user, isAdmin]);
+  const { data: userTransactions, isLoading: isUserTransactionsLoading } = useCollection<Transaction>(userTransactionsQuery);
 
   const login = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       return true;
     } catch (error) {
-      console.error("Login failed", error);
       return false;
     }
   };
@@ -112,18 +128,18 @@ export function useCatalogify() {
     if (diffDays > 0) {
       const weeksOverdue = Math.ceil(diffDays / 7);
       // Rs 5 for first week, increases by Rs 5 every subsequent week
-      // (week1: 5, week2: 10, week3: 15...)
       return weeksOverdue * 5;
     }
     return 0;
   }, []);
 
-  const addBook = (bookData: Omit<Book, 'id'>) => {
+  const addBook = (bookData: Omit<Book, 'id' | 'availableCopies'>) => {
     const colRef = collection(firestore, 'books');
     const newDocRef = doc(colRef);
     const data = {
       ...bookData,
       id: newDocRef.id,
+      availableCopies: bookData.totalCopies,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -187,7 +203,7 @@ export function useCatalogify() {
   };
 
   const checkInBook = (transactionId: string) => {
-    const transaction = transactions?.find(t => t.id === transactionId);
+    const transaction = (allTransactions || userTransactions)?.find(t => t.id === transactionId);
     if (!transaction || transaction.status === 'returned') return;
 
     const returnDate = new Date().toISOString().split('T')[0];
@@ -207,10 +223,11 @@ export function useCatalogify() {
 
   return {
     books: books || [],
-    members: members || [],
-    transactions: transactions || [],
+    members: allMembers || [],
+    transactions: isAdmin ? (allTransactions || []) : (userTransactions || []),
     currentUser: currentMember,
     isUserLoading,
+    isAdmin,
     login,
     logout,
     addBook,
@@ -221,6 +238,6 @@ export function useCatalogify() {
     checkOutBook,
     checkInBook,
     calculateFine,
-    isInitialLoading: isBooksLoading || isMembersLoading || isTransactionsLoading
+    isInitialLoading: isBooksLoading || isCurrentMemberLoading
   };
 }
