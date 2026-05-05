@@ -1,7 +1,6 @@
+'use client';
 
-"use client";
-
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { 
   useFirestore, 
   useAuth, 
@@ -9,23 +8,20 @@ import {
   useCollection, 
   useDoc, 
   useMemoFirebase,
-  addDocumentNonBlocking,
   updateDocumentNonBlocking,
-  deleteDocumentNonBlocking,
-  setDocumentNonBlocking
+  setDocumentNonBlocking,
+  deleteDocumentNonBlocking
 } from '@/firebase';
 import { 
   collection, 
   doc, 
   query, 
   where, 
-  serverTimestamp,
-  type DocumentData
+  serverTimestamp 
 } from 'firebase/firestore';
 import { 
   signInWithEmailAndPassword, 
-  signOut,
-  type User
+  signOut 
 } from 'firebase/auth';
 
 export type Book = {
@@ -70,35 +66,32 @@ export function useCatalogify() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
 
-  // 1. Public Collections (Accessible to everyone)
+  // 1. Check Admin status via roles_admin collection
+  const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'roles_admin', user.uid) : null, [firestore, user]);
+  const { data: adminRoleDoc } = useDoc(adminRoleRef);
+  const isAdmin = !!adminRoleDoc;
+
+  // 2. Public Catalog
   const booksQuery = useMemoFirebase(() => collection(firestore, 'books'), [firestore]);
   const { data: books, isLoading: isBooksLoading } = useCollection<Book>(booksQuery);
 
-  // 2. Current Member Data (Needed to determine role)
+  // 3. Current Member Profile
   const memberRef = useMemoFirebase(() => user ? doc(firestore, 'members', user.uid) : null, [firestore, user]);
   const { data: currentMember, isLoading: isCurrentMemberLoading } = useDoc<Member>(memberRef);
 
-  const isAdmin = currentMember?.role === 'admin';
+  // 4. Admin-Only Collections (Deferred until isAdmin is confirmed)
+  const allMembersQuery = useMemoFirebase(() => isAdmin ? collection(firestore, 'members') : null, [firestore, isAdmin]);
+  const { data: allMembers } = useCollection<Member>(allMembersQuery);
 
-  // 3. Admin-Only Collections
-  const allMembersQuery = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
-    return collection(firestore, 'members');
-  }, [firestore, isAdmin]);
-  const { data: allMembers, isLoading: isMembersLoading } = useCollection<Member>(allMembersQuery);
+  const allTransactionsQuery = useMemoFirebase(() => isAdmin ? collection(firestore, 'transactions') : null, [firestore, isAdmin]);
+  const { data: allTransactions } = useCollection<Transaction>(allTransactionsQuery);
 
-  const allTransactionsQuery = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
-    return collection(firestore, 'transactions');
-  }, [firestore, isAdmin]);
-  const { data: allTransactions, isLoading: isAllTransactionsLoading } = useCollection<Transaction>(allTransactionsQuery);
-
-  // 4. User-Specific Collections (QAPs)
+  // 5. Member-Specific Transactions (QAP)
   const userTransactionsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || isAdmin) return null;
+    if (!user || isAdmin) return null;
     return query(collection(firestore, 'transactions'), where('memberId', '==', user.uid));
   }, [firestore, user, isAdmin]);
-  const { data: userTransactions, isLoading: isUserTransactionsLoading } = useCollection<Transaction>(userTransactionsQuery);
+  const { data: userTransactions } = useCollection<Transaction>(userTransactionsQuery);
 
   const login = async (email: string, password: string) => {
     try {
@@ -109,25 +102,18 @@ export function useCatalogify() {
     }
   };
 
-  const logout = () => {
-    signOut(auth);
-  };
+  const logout = () => signOut(auth);
 
   const calculateFine = useCallback((transaction: Transaction | null): number => {
     if (!transaction || transaction.status === 'returned') return 0;
-    
     const dueDate = new Date(transaction.dueDate);
     const today = new Date();
-    
     dueDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
-
     const diffTime = today.getTime() - dueDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
     if (diffDays > 0) {
       const weeksOverdue = Math.ceil(diffDays / 7);
-      // Rs 5 for first week, increases by Rs 5 every subsequent week
       return weeksOverdue * 5;
     }
     return 0;
@@ -146,36 +132,6 @@ export function useCatalogify() {
     setDocumentNonBlocking(newDocRef, data, { merge: true });
   };
 
-  const updateBook = (id: string, updates: Partial<Book>) => {
-    const docRef = doc(firestore, 'books', id);
-    updateDocumentNonBlocking(docRef, {
-      ...updates,
-      updatedAt: serverTimestamp(),
-    });
-  };
-
-  const deleteBook = (id: string) => {
-    const docRef = doc(firestore, 'books', id);
-    deleteDocumentNonBlocking(docRef);
-  };
-
-  const addMember = (memberData: Omit<Member, 'id'>) => {
-    const colRef = collection(firestore, 'members');
-    const newDocRef = doc(colRef);
-    const data = {
-      ...memberData,
-      id: newDocRef.id,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    setDocumentNonBlocking(newDocRef, data, { merge: true });
-  };
-
-  const deleteMember = (id: string) => {
-    const docRef = doc(firestore, 'members', id);
-    deleteDocumentNonBlocking(docRef);
-  };
-
   const checkOutBook = (bookId: string, memberId: string) => {
     const book = books?.find(b => b.id === bookId);
     if (!book || book.availableCopies <= 0) return false;
@@ -184,7 +140,6 @@ export function useCatalogify() {
     const dueDate = new Date(today);
     dueDate.setDate(today.getDate() + LOAN_DAYS);
 
-    const colRef = collection(firestore, 'transactions');
     const transactionId = Math.random().toString(36).substring(7);
     const transactionData = {
       id: transactionId,
@@ -197,8 +152,11 @@ export function useCatalogify() {
       updatedAt: serverTimestamp(),
     };
 
-    setDocumentNonBlocking(doc(colRef, transactionId), transactionData, { merge: true });
-    updateBook(bookId, { availableCopies: book.availableCopies - 1 });
+    setDocumentNonBlocking(doc(firestore, 'transactions', transactionId), transactionData, { merge: true });
+    updateDocumentNonBlocking(doc(firestore, 'books', bookId), {
+      availableCopies: book.availableCopies - 1,
+      updatedAt: serverTimestamp(),
+    });
     return true;
   };
 
@@ -206,18 +164,18 @@ export function useCatalogify() {
     const transaction = (allTransactions || userTransactions)?.find(t => t.id === transactionId);
     if (!transaction || transaction.status === 'returned') return;
 
-    const returnDate = new Date().toISOString().split('T')[0];
-    const docRef = doc(firestore, 'transactions', transactionId);
-    
-    updateDocumentNonBlocking(docRef, {
+    updateDocumentNonBlocking(doc(firestore, 'transactions', transactionId), {
       status: 'returned',
-      returnDate,
+      returnDate: new Date().toISOString().split('T')[0],
       updatedAt: serverTimestamp(),
     });
 
     const book = books?.find(b => b.id === transaction.bookId);
     if (book) {
-      updateBook(book.id, { availableCopies: Math.min(book.availableCopies + 1, book.totalCopies) });
+      updateDocumentNonBlocking(doc(firestore, 'books', book.id), {
+        availableCopies: Math.min(book.availableCopies + 1, book.totalCopies),
+        updatedAt: serverTimestamp(),
+      });
     }
   };
 
@@ -231,10 +189,9 @@ export function useCatalogify() {
     login,
     logout,
     addBook,
-    updateBook,
-    deleteBook,
-    addMember,
-    deleteMember,
+    deleteBook: (id: string) => deleteDocumentNonBlocking(doc(firestore, 'books', id)),
+    addMember: (data: any) => setDocumentNonBlocking(doc(collection(firestore, 'members')), data, { merge: true }),
+    deleteMember: (id: string) => deleteDocumentNonBlocking(doc(firestore, 'members', id)),
     checkOutBook,
     checkInBook,
     calculateFine,
