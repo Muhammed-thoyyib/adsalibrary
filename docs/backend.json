@@ -1,0 +1,227 @@
+{
+  "entities": {
+    "Book": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Book",
+      "type": "object",
+      "description": "Represents a book available in the library catalog.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Book entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the book."
+        },
+        "author": {
+          "type": "string",
+          "description": "The author(s) of the book."
+        },
+        "isbn": {
+          "type": "string",
+          "description": "The International Standard Book Number (ISBN) of the book."
+        },
+        "category": {
+          "type": "string",
+          "description": "The genre or category of the book."
+        },
+        "totalCopies": {
+          "type": "number",
+          "description": "The total number of physical copies of this book owned by the library."
+        },
+        "availableCopies": {
+          "type": "number",
+          "description": "The number of copies of this book currently available for borrowing."
+        },
+        "location": {
+          "type": "string",
+          "description": "The physical location (e.g., shelf, section) of the book within the library."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "author",
+        "isbn",
+        "category",
+        "totalCopies",
+        "availableCopies",
+        "location"
+      ]
+    },
+    "Member": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Member",
+      "type": "object",
+      "description": "Represents a user or administrator of the library system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Member entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the member."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the member.",
+          "format": "email"
+        },
+        "memberId": {
+          "type": "string",
+          "description": "A unique identifier assigned to the member by the library, often used for external reference."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The contact phone number of the member."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the member within the application, determining access levels (e.g., 'admin', 'user').",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "memberId",
+        "phone",
+        "role"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Records the lending and return history of books for members, including fine calculations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transaction entity."
+        },
+        "bookId": {
+          "type": "string",
+          "description": "Reference to the Book entity involved in this transaction. (Relationship: Book 1:N Transaction)"
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Reference to the Member entity who borrowed the book. (Relationship: Member 1:N Transaction)"
+        },
+        "issueDate": {
+          "type": "string",
+          "description": "The date and time when the book was issued to the member.",
+          "format": "date-time"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "The date and time when the book is scheduled to be returned.",
+          "format": "date-time"
+        },
+        "returnDate": {
+          "type": "string",
+          "description": "The actual date and time when the book was returned. Null if the book is still issued.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the transaction (e.g., 'issued', 'returned').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fineAmount": {
+          "type": "number",
+          "description": "The calculated fine amount (if any) incurred due to late return, in the local currency unit."
+        }
+      },
+      "required": [
+        "id",
+        "bookId",
+        "memberId",
+        "issueDate",
+        "dueDate",
+        "status"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/books/{bookId}",
+        "definition": {
+          "entityName": "Book",
+          "schema": {
+            "$ref": "#/backend/entities/Book"
+          },
+          "description": "Stores details for each book in the library catalog. Accessible for reading by all authenticated members and fully managed by administrators.",
+          "params": [
+            {
+              "name": "bookId",
+              "description": "The unique identifier for a specific book."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/members/{memberId}",
+        "definition": {
+          "entityName": "Member",
+          "schema": {
+            "$ref": "#/backend/entities/Member"
+          },
+          "description": "Contains user profiles for library members and administrators. A member can read their own profile if `{memberId}` matches `request.auth.uid`. Full CRUD access is reserved for administrators.",
+          "params": [
+            {
+              "name": "memberId",
+              "description": "The unique identifier for a specific library member, corresponding to their Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Records all book lending and return transactions. Includes denormalized 'memberId' and 'bookId' fields to enable authorization independence. Only administrators can create, update, or delete transactions. Members can only read transactions where their 'memberId' matches the transaction's 'memberId'.",
+          "params": [
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for a specific book transaction (issue or return)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{uid}",
+        "definition": {
+          "entityName": "admin",
+          "schema": {
+            "$ref": "#/backend/entities/Member"
+          },
+          "description": "A collection used for Database Access Control (DBAC) to identify administrators. The existence of a document at `/roles_admin/$(request.auth.uid)` grants administrative privileges across the application. Only trusted backend functions or administrators can manage these entries.",
+          "params": [
+            {
+              "name": "uid",
+              "description": "The Firebase Authentication UID of a user designated as an administrator."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for Catalogify is designed to be secure, scalable, and highly debuggable, adhering strictly to the core design principles and strategy mandates. \n\n**Authorization Independence (CRITICAL):** This design eliminates the need for `get()` calls in Firestore Security Rules for authorization checks, thereby ensuring atomic operations and simplified rule debugging. This is achieved through: \n1.  **Denormalization of authorization context:** The `Transaction` entity, while inherently linking a book and a member, includes `memberId` as a top-level field. This allows security rules for `/transactions/{transactionId}` to directly check `resource.data.memberId == request.auth.uid` without needing to fetch the associated `Member` document. \n2.  **DBAC for roles:** Administrator roles are managed via a dedicated top-level collection, `/roles_admin/{uid}`. Admin privileges are granted by the *existence* of a document at this path for a given `uid`, enabling rules to use `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` without complex lookups or affecting atomicity. \n\n**Clarity of Intent & Debuggability:** Collection paths are semantically named (e.g., `/books`, `/members`, `/transactions`, `/roles_admin`). Wildcards are descriptive (`{bookId}`, `{memberId}`, `{transactionId}`). The explicit segregation of data by security posture makes authorization rules straightforward and easy to understand. \n\n**QAPs (Rules are not Filters):** The structure facilitates secure `list` operations:\n*   `/books`: All authenticated users (members and admins) can perform `list` queries without restrictions, as this is the public catalog. Rules will permit `read` for `request.auth != null`.\n*   `/members`: Admins can perform `list` operations on `/members` to manage all library members. Regular members can only `get` their own `Member` document at `/members/$(request.auth.uid)`.\n*   `/transactions`: Admins can perform `list` operations on `/transactions` to view all transactions. Regular members can `list` their *own* transactions by applying a `where('memberId', '==', request.auth.uid)` filter in their query, which is then enforced by security rules checking `resource.data.memberId == request.auth.uid`. \n\n**Structural Segregation:** Each collection (`/books`, `/members`, `/transactions`, `/roles_admin`) holds documents with a homogeneous security posture, preventing mixed access requirements within a single collection and simplifying security rule logic significantly. For instance, `/books` is globally readable (by authenticated users) and admin-writable, while `/members` is self-readable for users and fully managed by admins."
+  }
+}
