@@ -2,120 +2,129 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /*
-     * CORE PHILOSOPHY:
-     * This ruleset implements a centralized administrative control model combined with specific
-     * user-ownership for profile and transaction visibility. It prioritizes Authorization
-     * Independence by using a dedicated roles collection (/roles_admin) and denormalized
-     * fields (memberId) to ensure security checks are performant and atomic.
+    /**
+     * CORE PHILOSOPHY
+     * This ruleset implements a robust, role-based access control system for the Catalogify library management application.
+     * It prioritizes Authorization Independence, ensuring that security decisions are made using data directly available
+     * on the document or through path-based identity, minimizing expensive cross-document lookups.
      *
-     * DATA STRUCTURE:
-     * - /books: Public library catalog (read-only for members).
+     * DATA STRUCTURE
+     * - /books: A public catalog of all library items.
      * - /members: User profiles, keyed by Firebase Auth UID.
-     * - /transactions: Lending records, linked to members via 'memberId'.
-     * - /roles_admin: A marker collection where the existence of a UID document grants admin rights.
+     * - /transactions: Lending records, linked to members via memberId.
+     * - /roles_admin: A specialized collection for Database-Backed Access Control (DBAC).
      *
-     * KEY SECURITY DECISIONS:
-     * 1. DBAC (Database Access Control): Administrative privileges are determined by the existence
-     *    of a document in the `/roles_admin` collection, avoiding complex custom claims.
-     * 2. Strict CRUD Segregation: Only administrators can modify the catalog or manage transactions.
-     * 3. Self-Service Profiles: Users can create and read their own member profiles, but updates
-     *    are restricted to admins to maintain record integrity (e.g., role or memberId changes).
-     * 4. Relational Consistency: Enforces that a member profile's internal ID matches the document path.
+     * KEY SECURITY DECISIONS
+     * - Administrator Privileges: Determined by the existence of a document in the '/roles_admin' collection matching the user's UID.
+     * - Public Catalog: The 'books' collection allows public reading to support guest browsing, while restricting writes to admins.
+     * - User Ownership: Members can only access their own profile data and transaction history (for individual document reads).
+     * - Relational Integrity: On creation, documents must include internal fields (like 'memberId') that match the authenticated user.
+     * - Immutability: Critical relational links (e.g., the UID on a member profile) are immutable after creation.
      */
 
     // --- Helper Functions ---
 
-    /* @description Checks if the request is from an authenticated user. */
+    /**
+     * @description Checks if the user is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /* @description Checks if the authenticated user has administrative privileges via the roles_admin collection. */
+    /**
+     * @description Checks if the authenticated user has administrative privileges.
+     * Uses a fast existence check on the roles_admin collection.
+     */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /* @description Checks if the authenticated user's UID matches the provided ID. */
+    /**
+     * @description Checks if the authenticated user matches the provided userId (Path-based or Data-based).
+     * This function now serves the purpose originally intended for `isDataOwner` as well,
+     * as their implementations were identical.
+     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /*
-     * @description Validates that the transaction document belongs to the requesting user.
-     * Used for 'get' operations where resource data is available.
-     * @param {map} transactionResource - The resource map representing the existing document.
+    /**
+     * @description Checks if the authenticated user matches the provided userId and the document exists.
      */
-    function isTransactionParticipant(transactionResource) {
-      return isSignedIn() && transactionResource.data.memberId == request.auth.uid;
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /**
+     * @description Enforces that a field remains unchanged during an update.
+     */
+    function isImmutable(fieldName) {
+      return request.resource.data[fieldName] == resource.data[fieldName];
     }
 
     // --- Collection Rules ---
 
-    /*
-     * @description Library catalog. Publicly viewable by all members; managed by admins.
+    /**
+     * @description Rules for the public book catalog.
      * @path /books/{bookId}
-     * @allow (get, list) Authenticated users searching the catalog.
-     * @deny (create, update, delete) Non-admin users attempting to modify book data.
-     * @principle Public Read with Owner-Only (Admin) Writes.
+     * @allow get, list: if true (Publicly accessible catalog)
+     * @allow create: if isAdmin() (Only librarians can add books)
+     * @deny create, update: if request.auth.uid != adminUid (Standard users cannot modify catalog)
+     * @principle Role-based writes with public read access.
      */
     match /books/{bookId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow get, list: if true;
+      allow create: if isAdmin() && request.resource.data.id == bookId;
+      allow update: if isAdmin() && resource != null && isImmutable('id');
+      allow delete: if isAdmin() && resource != null;
     }
 
-    /*
-     * @description User profiles for library members and administrators.
-     * @path /members/{memberId}
-     * @allow (get) User accessing their own profile.
-     * @allow (create) User setting up their profile where internal ID matches their UID.
-     * @deny (list) Regular users trying to browse the member directory.
-     * @principle Ownership-based access for users; Administrative override for full management.
+    /**
+     * @description Rules for library member profiles.
+     * @path /members/{userId}
+     * @allow get: if isOwner(userId) || isAdmin() (Self-access or Admin)
+     * @allow list: if isAdmin() (Prevent user discovery)
+     * @allow update: if isOwner(userId) (Users can update their own info)
+     * @principle Identity-based ownership and structural segregation.
      */
-    match /members/{memberId} {
-      allow get: if isOwner(memberId) || isAdmin();
+    match /members/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-
-      // Users can create their own profile; admins can create any profile.
-      allow create: if (isOwner(memberId) && request.resource.data.id == memberId) || isAdmin();
-
-      // Only admins can update or delete member records to prevent role manipulation.
-      allow update: if resource != null && isAdmin() && request.resource.data.id == resource.data.id;
-      allow delete: if resource != null && isAdmin();
+      allow create: if (isOwner(userId) && request.resource.data.id == userId) || isAdmin();
+      allow update: if (isExistingOwner(userId) && isImmutable('id')) || isAdmin();
+      allow delete: if isAdmin() && resource != null;
     }
 
-    /*
-     * @description Book lending and return transactions.
+    /**
+     * @description Rules for book lending transactions.
      * @path /transactions/{transactionId}
-     * @allow (get) User viewing a specific transaction they are involved in.
-     * * @allow (list) Admins viewing the full transaction log.
-     * @deny (create, update) Users attempting to create or finalize their own loans.
-     * @principle Secure lookup for owners via denormalized ID; Admin-only state management.
+     * @allow get: if isOwner(resource.data.memberId) || isAdmin()
+     * @allow create: if isOwner(request.resource.data.memberId) || isAdmin()
+     * @allow list: if isAdmin() (Listings restricted to admins for security; users must query by memberId)
+     * @principle Relational integrity and owner-only data access.
      */
     match /transactions/{transactionId} {
-      // Users can get individual transactions they are part of.
-      allow get: if isAdmin() || isTransactionParticipant(resource);
-
-      // Per prototyping security constraints, list operations avoid resource data checks.
-      // Members should query via admins or specific lookups; global listing is for admins.
+      // Replaced `(isSignedIn() && resource.data.memberId == request.auth.uid)` with `isOwner(resource.data.memberId)`
+      allow get: if isOwner(resource.data.memberId) || isAdmin();
       allow list: if isAdmin();
-
-      // Transactions are strictly managed by the library administration.
-      allow create: if isAdmin();
-      allow update: if resource != null && isAdmin();
-      allow delete: if resource != null && isAdmin();
+      // Replaced `(isSignedIn() && request.resource.data.memberId == request.auth.uid)` with `isOwner(request.resource.data.memberId)`
+      allow create: if isOwner(request.resource.data.memberId) || isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
     }
 
-    /*
-     * @description Administrative role assignments. Existence of a document here grants root admin access.
-     * @path /roles_admin/{uid}
-     * @allow (get, list, create, update, delete) Existing administrators managing the admin list.
-     * @deny (all) Regular users or non-authenticated requests.
-     * @principle DBAC (Database Access Control) roles management.
+    /**
+     * @description Metadata collection for administrative roles.
+     * @path /roles_admin/{adminId}
+     * @allow get: if isOwner(adminId) || isAdmin()
+     * @allow list: if isAdmin()
+     * @deny create, update, delete: if true (Managed via Console/Backend)
+     * @principle Database-Backed Access Control (DBAC).
      */
-    match /roles_admin/{uid} {
-      allow get, list, create, update, delete: if isAdmin();
+    match /roles_admin/{adminId} {
+      allow get: if isOwner(adminId) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update, delete: if false; 
     }
-
   }
 }
