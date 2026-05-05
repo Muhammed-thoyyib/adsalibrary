@@ -10,17 +10,19 @@ import {
   useMemoFirebase,
   updateDocumentNonBlocking,
   setDocumentNonBlocking,
-  deleteDocumentNonBlocking
+  deleteDocumentNonBlocking,
+  initiateEmailSignIn,
+  initiateEmailSignUp
 } from '@/firebase';
 import { 
   collection, 
   doc, 
   query, 
   where, 
-  serverTimestamp 
+  serverTimestamp,
+  setDoc
 } from 'firebase/firestore';
 import { 
-  signInWithEmailAndPassword, 
   signOut 
 } from 'firebase/auth';
 
@@ -93,14 +95,14 @@ export function useCatalogify() {
   }, [firestore, user, isAdmin]);
   const { data: userTransactions } = useCollection<Transaction>(userTransactionsQuery);
 
-  const login = async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      return true;
-    } catch (error) {
-      console.error("Login error:", error);
-      return false;
-    }
+  const login = (email: string, password: string) => {
+    initiateEmailSignIn(auth, email, password);
+  };
+
+  const register = (email: string, password: string, name: string, memberId: string) => {
+    // This is handled by a combination of Auth registration and Firestore document creation
+    // For the prototype, we assume the user creates their own document after sign up via useEffect in the UI
+    initiateEmailSignUp(auth, email, password);
   };
 
   const logout = () => signOut(auth);
@@ -116,7 +118,6 @@ export function useCatalogify() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays > 0) {
-      // Progressive fine: ₹5 for the first week, and ₹5 for each additional week.
       const weeksOverdue = Math.ceil(diffDays / 7);
       return weeksOverdue * 5;
     }
@@ -183,6 +184,15 @@ export function useCatalogify() {
     }
   };
 
+  const createMemberProfile = (userId: string, data: Omit<Member, 'id'>) => {
+    setDocumentNonBlocking(doc(firestore, 'members', userId), {
+      ...data,
+      id: userId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  };
+
   return {
     books: books || [],
     members: allMembers || [],
@@ -191,11 +201,12 @@ export function useCatalogify() {
     isUserLoading,
     isAdmin,
     login,
+    register,
     logout,
+    createMemberProfile,
     addBook,
     deleteBook: (id: string) => deleteDocumentNonBlocking(doc(firestore, 'books', id)),
     addMember: (data: any) => {
-      // If we have a specific ID (like a UID), use it, otherwise let Firestore generate
       const docRef = data.id ? doc(firestore, 'members', data.id) : doc(collection(firestore, 'members'));
       setDocumentNonBlocking(docRef, { ...data, id: docRef.id, updatedAt: serverTimestamp() }, { merge: true });
     },
@@ -203,6 +214,6 @@ export function useCatalogify() {
     checkOutBook,
     checkInBook,
     calculateFine,
-    isInitialLoading: isBooksLoading || isCurrentMemberLoading
+    isInitialLoading: isBooksLoading || (user && isCurrentMemberLoading)
   };
 }
