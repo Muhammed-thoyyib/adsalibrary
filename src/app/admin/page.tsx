@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -56,7 +55,7 @@ import {
 } from '@/components/ui/select';
 import { generateBookSummary } from '@/ai/flows/librarian-book-summary-generator';
 import { useToast } from '@/hooks/use-toast';
-import { Member, Transaction } from '@/lib/mock-data';
+import { type Transaction } from '@/hooks/use-catalogify';
 
 export default function AdminDashboard() {
   const { 
@@ -69,7 +68,8 @@ export default function AdminDashboard() {
     deleteMember, 
     checkInBook,
     checkOutBook,
-    calculateFine
+    calculateFine,
+    isInitialLoading
   } = useCatalogify();
   
   const [bookSearchQuery, setBookSearchQuery] = useState('');
@@ -85,10 +85,9 @@ export default function AdminDashboard() {
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
-    book_number: '',
-    barcode: '',
+    isbn: '',
     category: '',
-    total_copies: 1,
+    totalCopies: 1,
     location: '',
     description: '',
     summary: '',
@@ -97,9 +96,9 @@ export default function AdminDashboard() {
 
   const [newMember, setNewMember] = useState({
     name: '',
-    member_id: '',
-    role: 'user' as 'user' | 'admin',
-    status: 'active' as 'active' | 'suspended'
+    email: '',
+    memberId: '',
+    role: 'user' as 'user' | 'admin'
   });
 
   const [checkoutData, setCheckoutData] = useState({
@@ -147,36 +146,35 @@ export default function AdminDashboard() {
   };
 
   const handleAddBookSubmit = () => {
-    if (!newBook.title || !newBook.barcode) {
-      toast({ title: "Error", description: "Title and Barcode are required.", variant: "destructive" });
+    if (!newBook.title || !newBook.isbn) {
+      toast({ title: "Error", description: "Title and ISBN are required.", variant: "destructive" });
       return;
     }
     addBook({
       title: newBook.title,
       author: newBook.author,
-      book_number: newBook.book_number,
-      barcode: newBook.barcode,
+      isbn: newBook.isbn,
       category: newBook.category || 'Fiction',
-      total_copies: newBook.total_copies,
-      available_copies: newBook.total_copies,
+      totalCopies: newBook.totalCopies,
+      availableCopies: newBook.totalCopies,
       location: newBook.location,
       summary: newBook.summary,
       keyThemes: newBook.keyThemes
     });
     setIsAddingBook(false);
-    setNewBook({ title: '', author: '', book_number: '', barcode: '', category: '', total_copies: 1, location: '', description: '', summary: '', keyThemes: [] });
+    setNewBook({ title: '', author: '', isbn: '', category: '', totalCopies: 1, location: '', description: '', summary: '', keyThemes: [] });
     toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
   };
 
   const handleAddMemberSubmit = () => {
-    if (!newMember.name || !newMember.member_id) {
-      toast({ title: "Error", description: "Name and Member ID are required.", variant: "destructive" });
+    if (!newMember.name || !newMember.memberId || !newMember.email) {
+      toast({ title: "Error", description: "Name, Email and Member ID are required.", variant: "destructive" });
       return;
     }
     addMember(newMember);
     setIsAddingMember(false);
-    setNewMember({ name: '', member_id: '', role: 'user', status: 'active' });
-    toast({ title: "Member Registered", description: `Member ${newMember.name} has been added to ADSALIBRARY.` });
+    setNewMember({ name: '', email: '', memberId: '', role: 'user' });
+    toast({ title: "Member Registered", description: `Member ${newMember.name} has been added.` });
   };
 
   const handleCheckoutSubmit = () => {
@@ -211,18 +209,17 @@ export default function AdminDashboard() {
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
     b.author.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
-    b.barcode.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
-    b.book_number.toLowerCase().includes(bookSearchQuery.toLowerCase())
+    b.isbn.toLowerCase().includes(bookSearchQuery.toLowerCase())
   );
 
   const filteredMembers = members.filter(m => 
     m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
-    m.member_id.toLowerCase().includes(memberSearchQuery.toLowerCase())
+    m.memberId.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
 
   const filteredTransactions = transactions.filter(t => {
-    const book = books.find(b => b.id === t.book_id);
-    const member = members.find(m => m.id === t.member_id);
+    const book = books.find(b => b.id === t.bookId);
+    const member = members.find(m => m.id === t.memberId);
     const query = historySearchQuery.toLowerCase();
     return (
       book?.title.toLowerCase().includes(query) ||
@@ -237,13 +234,13 @@ export default function AdminDashboard() {
 
   const filteredActiveTransactions = useMemo(() => {
     return activeTransactions.filter(t => {
-      const book = books.find(b => b.id === t.book_id);
-      const member = members.find(m => m.id === t.member_id);
+      const book = books.find(b => b.id === t.bookId);
+      const member = members.find(m => m.id === t.memberId);
       const query = activeSearchQuery.toLowerCase();
       return (
         book?.title.toLowerCase().includes(query) ||
         member?.name.toLowerCase().includes(query) ||
-        book?.barcode.toLowerCase().includes(query)
+        book?.isbn.toLowerCase().includes(query)
       );
     });
   }, [activeTransactions, activeSearchQuery, books, members]);
@@ -251,14 +248,25 @@ export default function AdminDashboard() {
   const overdueTransactions = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return transactions.filter(t => t.status === 'issued' && new Date(t.due_date) < today);
+    return transactions.filter(t => t.status === 'issued' && new Date(t.dueDate) < today);
   }, [transactions]);
 
   const overdueCount = overdueTransactions.length;
 
   const getMemberTransactions = (memberId: string) => {
-    return transactions.filter(t => t.member_id === memberId);
+    return transactions.filter(t => t.memberId === memberId);
   };
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex-1 flex flex-col bg-background h-screen overflow-hidden">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <Clock className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col bg-background h-screen overflow-hidden">
@@ -268,7 +276,7 @@ export default function AdminDashboard() {
           <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-headline font-bold text-primary">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Manage ADSALIBRARY assets, members, and tracking.</p>
+              <p className="text-muted-foreground">Manage library assets, members, and tracking.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Dialog open={isCheckingOut} onOpenChange={setIsCheckingOut}>
@@ -287,12 +295,12 @@ export default function AdminDashboard() {
                       <Label htmlFor="checkout-book">Search Book</Label>
                       <Select value={checkoutData.bookId} onValueChange={(val) => setCheckoutData({...checkoutData, bookId: val})}>
                         <SelectTrigger id="checkout-book">
-                          <SelectValue placeholder="Search by title or barcode" />
+                          <SelectValue placeholder="Search by title or ISBN" />
                         </SelectTrigger>
                         <SelectContent>
                           {books.map(book => (
-                            <SelectItem key={book.id} value={book.id} disabled={book.available_copies <= 0}>
-                              {book.title} ({book.barcode}) - {book.available_copies > 0 ? 'Available' : 'Out'}
+                            <SelectItem key={book.id} value={book.id} disabled={book.availableCopies <= 0}>
+                              {book.title} ({book.isbn}) - {book.availableCopies > 0 ? 'Available' : 'Out'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -305,9 +313,9 @@ export default function AdminDashboard() {
                           <SelectValue placeholder="Search by name or ID" />
                         </SelectTrigger>
                         <SelectContent>
-                          {members.filter(m => m.status === 'active').map(member => (
+                          {members.map(member => (
                             <SelectItem key={member.id} value={member.id}>
-                              {member.name} ({member.member_id})
+                              {member.name} ({member.memberId})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -330,7 +338,7 @@ export default function AdminDashboard() {
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle>Register New Member</DialogTitle>
-                    <DialogDescription>Create a new member profile using Name and Member ID.</DialogDescription>
+                    <DialogDescription>Create a new member profile.</DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
@@ -343,12 +351,22 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="mem-id">Member ID / Code</Label>
+                      <Label htmlFor="mem-email">Email</Label>
+                      <Input 
+                        id="mem-email" 
+                        type="email"
+                        placeholder="john@example.com" 
+                        value={newMember.email} 
+                        onChange={e => setNewMember({...newMember, email: e.target.value})} 
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="mem-id">Member ID</Label>
                       <Input 
                         id="mem-id" 
                         placeholder="e.g. LIB005" 
-                        value={newMember.member_id} 
-                        onChange={e => setNewMember({...newMember, member_id: e.target.value.toUpperCase()})} 
+                        value={newMember.memberId} 
+                        onChange={e => setNewMember({...newMember, memberId: e.target.value.toUpperCase()})} 
                       />
                     </div>
                   </div>
@@ -383,14 +401,10 @@ export default function AdminDashboard() {
                         <Input id="author" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="book_number">Book Number</Label>
-                        <Input id="book_number" value={newBook.book_number} onChange={e => setNewBook({...newBook, book_number: e.target.value})} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="barcode">Barcode</Label>
-                        <Input id="barcode" placeholder="e.g. ADS-B101" value={newBook.barcode} onChange={e => setNewBook({...newBook, barcode: e.target.value.toUpperCase()})} />
+                        <Label htmlFor="isbn">Book Number (ISBN)</Label>
+                        <Input id="isbn" placeholder="e.g. 978-..." value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
                       </div>
                     </div>
                     
@@ -401,7 +415,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="copies">Total Copies</Label>
-                        <Input id="copies" type="number" value={newBook.total_copies} onChange={e => setNewBook({...newBook, total_copies: parseInt(e.target.value)})} />
+                        <Input id="copies" type="number" value={newBook.totalCopies} onChange={e => setNewBook({...newBook, totalCopies: parseInt(e.target.value)})} />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -457,8 +471,8 @@ export default function AdminDashboard() {
               {checkingInTransaction && (
                 <div className="py-4 space-y-4">
                   <div className="p-3 bg-secondary/30 rounded-lg text-sm">
-                    <p className="font-semibold">{books.find(b => b.id === checkingInTransaction.book_id)?.title}</p>
-                    <p className="text-xs text-muted-foreground">Checked out to: {members.find(m => m.id === checkingInTransaction.member_id)?.name}</p>
+                    <p className="font-semibold">{books.find(b => b.id === checkingInTransaction.bookId)?.title}</p>
+                    <p className="text-xs text-muted-foreground">Checked out to: {members.find(m => m.id === checkingInTransaction.memberId)?.name}</p>
                     {calculateFine(checkingInTransaction) > 0 && (
                       <div className="mt-2 flex items-center gap-1 text-destructive font-bold">
                         <AlertCircle className="h-3 w-3" /> Fine: ₹{calculateFine(checkingInTransaction)}
@@ -537,7 +551,7 @@ export default function AdminDashboard() {
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-headline text-xl">Book Inventory</CardTitle>
-                    <CardDescription>Manage ADSALIBRARY's physical and digital collection.</CardDescription>
+                    <CardDescription>Manage your library's physical and digital collection.</CardDescription>
                   </div>
                   <div className="flex items-center gap-4">
                     <Button onClick={() => setIsAddingBook(true)} variant="outline" size="sm" className="hidden md:flex border-primary text-primary hover:bg-primary/5">
@@ -546,7 +560,7 @@ export default function AdminDashboard() {
                     <div className="relative w-full md:w-72">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        placeholder="Search title, barcode, book number..." 
+                        placeholder="Search title, ISBN..." 
                         className="pl-9" 
                         value={bookSearchQuery}
                         onChange={e => setBookSearchQuery(e.target.value)}
@@ -558,7 +572,7 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Title & Barcode</TableHead>
+                        <TableHead>Title & ISBN</TableHead>
                         <TableHead>Author</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Availability</TableHead>
@@ -572,7 +586,7 @@ export default function AdminDashboard() {
                           <TableCell>
                             <div className="font-medium">{book.title}</div>
                             <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase">
-                              <Barcode className="h-3 w-3" /> {book.barcode}
+                              <Barcode className="h-3 w-3" /> {book.isbn}
                             </div>
                           </TableCell>
                           <TableCell className="text-sm">{book.author}</TableCell>
@@ -581,8 +595,8 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span className={`h-2 w-2 rounded-full ${book.available_copies > 0 ? 'bg-green-500' : 'bg-destructive'}`} />
-                              <span className="text-sm">{book.available_copies} / {book.total_copies}</span>
+                              <span className={`h-2 w-2 rounded-full ${book.availableCopies > 0 ? 'bg-green-500' : 'bg-destructive'}`} />
+                              <span className="text-sm">{book.availableCopies} / {book.totalCopies}</span>
                             </div>
                           </TableCell>
                           <TableCell className="font-mono text-xs">{book.location}</TableCell>
@@ -623,7 +637,6 @@ export default function AdminDashboard() {
                         <TableHead>Name</TableHead>
                         <TableHead>Member ID</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -635,16 +648,11 @@ export default function AdminDashboard() {
                             {member.email && <div className="text-xs text-muted-foreground">{member.email}</div>}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="font-mono">{member.member_id}</Badge>
+                            <Badge variant="outline" className="font-mono">{member.memberId}</Badge>
                           </TableCell>
                           <TableCell>
                             <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="capitalize">
                               {member.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                              {member.status}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right space-x-1">
@@ -657,7 +665,7 @@ export default function AdminDashboard() {
                               <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
                                 <DialogHeader>
                                   <DialogTitle className="text-2xl font-headline">Member Profile: {member.name}</DialogTitle>
-                                  <DialogDescription>Viewing activity and status for {member.member_id}</DialogDescription>
+                                  <DialogDescription>Viewing activity and status for {member.memberId}</DialogDescription>
                                 </DialogHeader>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
@@ -667,8 +675,7 @@ export default function AdminDashboard() {
                                         <Users className="h-4 w-4" /> Personal Information
                                       </h4>
                                       <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Status</span><Badge>{member.status}</Badge></div>
-                                        <div className="flex justify-between"><span className="text-muted-foreground">ID Code</span><span className="font-mono">{member.member_id}</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">ID Code</span><span className="font-mono">{member.memberId}</span></div>
                                         <div className="flex justify-between"><span className="text-muted-foreground">Role</span><span className="capitalize">{member.role}</span></div>
                                       </div>
                                     </div>
@@ -703,8 +710,8 @@ export default function AdminDashboard() {
                                     <div className="space-y-2">
                                       {getMemberTransactions(member.id).length > 0 ? (
                                         getMemberTransactions(member.id).map(t => {
-                                          const book = books.find(b => b.id === t.book_id);
-                                          const isOverdue = t.status === 'issued' && new Date(t.due_date) < new Date();
+                                          const book = books.find(b => b.id === t.bookId);
+                                          const isOverdue = t.status === 'issued' && new Date(t.dueDate) < new Date();
                                           const fine = calculateFine(t);
                                           
                                           return (
@@ -712,9 +719,9 @@ export default function AdminDashboard() {
                                               <div className="flex flex-col gap-1">
                                                 <span className="font-medium">{book?.title || 'Unknown Book'}</span>
                                                 <div className="flex flex-col text-[10px] text-muted-foreground space-y-0.5">
-                                                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Checked Out: {t.issue_date}</span>
+                                                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> Checked Out: {t.issueDate}</span>
                                                   <span className={`flex items-center gap-1 ${isOverdue ? 'text-destructive font-bold' : ''}`}>
-                                                    <Clock className="h-3 w-3" /> Due: {t.due_date}
+                                                    <Clock className="h-3 w-3" /> Due: {t.dueDate}
                                                   </span>
                                                   {fine > 0 && <span className="text-destructive font-bold flex items-center gap-1"><IndianRupee className="h-2 w-2" /> Fine: ₹{fine}</span>}
                                                 </div>
@@ -746,7 +753,7 @@ export default function AdminDashboard() {
                               </DialogContent>
                             </Dialog>
                             
-                            <Button variant="ghost" size="icon" onClick={() => deleteMember(member.id)} disabled={member.role === 'admin' && members.filter(m => m.role === 'admin').length <= 1}>
+                            <Button variant="ghost" size="icon" onClick={() => deleteMember(member.id)}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </TableCell>
@@ -768,7 +775,7 @@ export default function AdminDashboard() {
                   <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                      placeholder="Search title, member, barcode..." 
+                      placeholder="Search title, member, ISBN..." 
                       className="pl-9" 
                       value={activeSearchQuery}
                       onChange={e => setActiveSearchQuery(e.target.value)}
@@ -779,7 +786,7 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Book & Barcode</TableHead>
+                        <TableHead>Book & ISBN</TableHead>
                         <TableHead>Checked Out To</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Fine</TableHead>
@@ -789,22 +796,22 @@ export default function AdminDashboard() {
                     <TableBody>
                       {filteredActiveTransactions.length > 0 ? (
                         filteredActiveTransactions.map(t => {
-                          const book = books.find(b => b.id === t.book_id);
-                          const member = members.find(m => m.id === t.member_id);
-                          const isOverdue = new Date(t.due_date) < new Date();
+                          const book = books.find(b => b.id === t.bookId);
+                          const member = members.find(m => m.id === t.memberId);
+                          const isOverdue = new Date(t.dueDate) < new Date();
                           const fine = calculateFine(t);
                           return (
                             <TableRow key={t.id}>
                               <TableCell>
                                 <div className="font-medium">{book?.title || 'Unknown'}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.barcode}</div>
+                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.isbn}</div>
                               </TableCell>
                               <TableCell>
                                 <div className="font-medium">{member?.name || 'Unknown'}</div>
-                                <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
+                                <div className="text-[10px] text-muted-foreground">{member?.memberId}</div>
                               </TableCell>
                               <TableCell className={`text-xs ${isOverdue ? 'text-destructive font-bold' : ''}`}>
-                                {t.due_date}
+                                {t.dueDate}
                               </TableCell>
                               <TableCell className="text-xs">
                                 {fine > 0 ? <span className="text-destructive font-bold">₹{fine}</span> : '₹0'}
@@ -824,7 +831,7 @@ export default function AdminDashboard() {
                         })
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-muted-foreground italic">
+                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground italic">
                             No books currently checked out.
                           </TableCell>
                         </TableRow>
@@ -839,13 +846,13 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline text-xl text-destructive">Overdue Books</CardTitle>
-                  <CardDescription>Books past their 14-day limit. Fine: ₹5 for first week, increases by ₹5 every subsequent week.</CardDescription>
+                  <CardDescription>Books past their 14-day limit. Fine: ₹5/week.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Book & Barcode</TableHead>
+                        <TableHead>Book & ISBN</TableHead>
                         <TableHead>Checked Out To</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Fine</TableHead>
@@ -855,20 +862,20 @@ export default function AdminDashboard() {
                     <TableBody>
                       {overdueTransactions.length > 0 ? (
                         overdueTransactions.map(t => {
-                          const book = books.find(b => b.id === t.book_id);
-                          const member = members.find(m => m.id === t.member_id);
+                          const book = books.find(b => b.id === t.bookId);
+                          const member = members.find(m => m.id === t.memberId);
                           return (
                             <TableRow key={t.id} className="bg-destructive/5">
                               <TableCell>
                                 <div className="font-medium">{book?.title || 'Unknown'}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.barcode}</div>
+                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.isbn}</div>
                               </TableCell>
                               <TableCell>
                                 <div className="font-medium">{member?.name || 'Unknown'}</div>
-                                <div className="text-[10px] text-muted-foreground">{member?.member_id}</div>
+                                <div className="text-[10px] text-muted-foreground">{member?.memberId}</div>
                               </TableCell>
                               <TableCell className="text-destructive font-bold text-sm">
-                                {t.due_date}
+                                {t.dueDate}
                               </TableCell>
                               <TableCell className="text-destructive font-bold text-sm">
                                 ₹{calculateFine(t)}
@@ -904,7 +911,7 @@ export default function AdminDashboard() {
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
-                    <CardDescription>Real-time log of all book circulations at ADSALIBRARY.</CardDescription>
+                    <CardDescription>Real-time log of all book circulations.</CardDescription>
                   </div>
                   <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -929,8 +936,8 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {filteredTransactions.map(t => {
-                        const book = books.find(b => b.id === t.book_id);
-                        const member = members.find(m => m.id === t.member_id);
+                        const book = books.find(b => b.id === t.bookId);
+                        const member = members.find(m => m.id === t.memberId);
                         const fine = calculateFine(t);
                         return (
                           <TableRow key={t.id}>
