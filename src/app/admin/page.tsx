@@ -85,7 +85,7 @@ export default function AdminDashboard() {
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
-    isbn: '',
+    bookNumber: '',
     category: '',
     totalCopies: 1,
     location: '',
@@ -146,14 +146,14 @@ export default function AdminDashboard() {
   };
 
   const handleAddBookSubmit = () => {
-    if (!newBook.title || !newBook.isbn) {
-      toast({ title: "Error", description: "Title and ISBN are required.", variant: "destructive" });
+    if (!newBook.title || !newBook.bookNumber) {
+      toast({ title: "Error", description: "Title and Book Number are required.", variant: "destructive" });
       return;
     }
     addBook({
       title: newBook.title,
       author: newBook.author,
-      isbn: newBook.isbn,
+      bookNumber: newBook.bookNumber,
       category: newBook.category || 'Fiction',
       totalCopies: newBook.totalCopies,
       availableCopies: newBook.totalCopies,
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
       keyThemes: newBook.keyThemes
     });
     setIsAddingBook(false);
-    setNewBook({ title: '', author: '', isbn: '', category: '', totalCopies: 1, location: '', description: '', summary: '', keyThemes: [] });
+    setNewBook({ title: '', author: '', bookNumber: '', category: '', totalCopies: 1, location: '', description: '', summary: '', keyThemes: [] });
     toast({ title: "Book Added", description: "The book has been successfully added to the catalog." });
   };
 
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(bookSearchQuery.toLowerCase()) || 
     b.author.toLowerCase().includes(bookSearchQuery.toLowerCase()) ||
-    b.isbn.toLowerCase().includes(bookSearchQuery.toLowerCase())
+    b.bookNumber.toLowerCase().includes(bookSearchQuery.toLowerCase())
   );
 
   const filteredMembers = members.filter(m => 
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
       return (
         book?.title.toLowerCase().includes(query) ||
         member?.name.toLowerCase().includes(query) ||
-        book?.isbn.toLowerCase().includes(query)
+        book?.bookNumber.toLowerCase().includes(query)
       );
     });
   }, [activeTransactions, activeSearchQuery, books, members]);
@@ -295,12 +295,12 @@ export default function AdminDashboard() {
                       <Label htmlFor="checkout-book">Search Book</Label>
                       <Select value={checkoutData.bookId} onValueChange={(val) => setCheckoutData({...checkoutData, bookId: val})}>
                         <SelectTrigger id="checkout-book">
-                          <SelectValue placeholder="Search by title or ISBN" />
+                          <SelectValue placeholder="Search by title or Book Number" />
                         </SelectTrigger>
                         <SelectContent>
                           {books.map(book => (
                             <SelectItem key={book.id} value={book.id} disabled={book.availableCopies <= 0}>
-                              {book.title} ({book.isbn}) - {book.availableCopies > 0 ? 'Available' : 'Out'}
+                              {book.title} ({book.bookNumber}) - {book.availableCopies > 0 ? 'Available' : 'Out'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -403,8 +403,8 @@ export default function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="isbn">Book Number (ISBN)</Label>
-                        <Input id="isbn" placeholder="e.g. 978-..." value={newBook.isbn} onChange={e => setNewBook({...newBook, isbn: e.target.value})} />
+                        <Label htmlFor="bookNumber">Book Number (Unique Identifier)</Label>
+                        <Input id="bookNumber" placeholder="e.g. REF-001" value={newBook.bookNumber} onChange={e => setNewBook({...newBook, bookNumber: e.target.value})} />
                       </div>
                     </div>
                     
@@ -551,7 +551,7 @@ export default function AdminDashboard() {
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-headline text-xl">Book Inventory</CardTitle>
-                    <CardDescription>Manage your library's physical and digital collection.</CardDescription>
+                    <CardDescription>Manage your library's collection.</CardDescription>
                   </div>
                   <div className="flex items-center gap-4">
                     <Button onClick={() => setIsAddingBook(true)} variant="outline" size="sm" className="hidden md:flex border-primary text-primary hover:bg-primary/5">
@@ -560,7 +560,7 @@ export default function AdminDashboard() {
                     <div className="relative w-full md:w-72">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        placeholder="Search title, ISBN..." 
+                        placeholder="Search title, Book Number..." 
                         className="pl-9" 
                         value={bookSearchQuery}
                         onChange={e => setBookSearchQuery(e.target.value)}
@@ -572,7 +572,7 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Title & ISBN</TableHead>
+                        <TableHead>Title & ID</TableHead>
                         <TableHead>Author</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Availability</TableHead>
@@ -586,7 +586,7 @@ export default function AdminDashboard() {
                           <TableCell>
                             <div className="font-medium">{book.title}</div>
                             <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground uppercase">
-                              <Barcode className="h-3 w-3" /> {book.isbn}
+                              <Barcode className="h-3 w-3" /> {book.bookNumber}
                             </div>
                           </TableCell>
                           <TableCell className="text-sm">{book.author}</TableCell>
@@ -665,14 +665,14 @@ export default function AdminDashboard() {
                               <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
                                 <DialogHeader>
                                   <DialogTitle className="text-2xl font-headline">Member Profile: {member.name}</DialogTitle>
-                                  <DialogDescription>Viewing activity and status for {member.memberId}</DialogDescription>
+                                  <DialogDescription>Viewing activity for {member.memberId}</DialogDescription>
                                 </DialogHeader>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
                                   <div className="space-y-4">
                                     <div className="p-4 bg-secondary/30 rounded-xl border">
                                       <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                                        <Users className="h-4 w-4" /> Personal Information
+                                        <Users className="h-4 w-4" /> Information
                                       </h4>
                                       <div className="space-y-2 text-sm">
                                         <div className="flex justify-between"><span className="text-muted-foreground">ID Code</span><span className="font-mono">{member.memberId}</span></div>
@@ -705,7 +705,7 @@ export default function AdminDashboard() {
 
                                   <div className="space-y-4">
                                     <h4 className="text-sm font-semibold flex items-center gap-2">
-                                      <HistoryIcon className="h-4 w-4" /> Activity History
+                                      <HistoryIcon className="h-4 w-4" /> History
                                     </h4>
                                     <div className="space-y-2">
                                       {getMemberTransactions(member.id).length > 0 ? (
@@ -737,7 +737,7 @@ export default function AdminDashboard() {
                                                     className="h-7 text-xs text-accent flex items-center gap-1 hover:bg-accent/10"
                                                     onClick={() => initiateCheckIn(t)}
                                                   >
-                                                    <Undo2 className="h-3 w-3" /> Process Check In
+                                                    <Undo2 className="h-3 w-3" /> Check In
                                                   </Button>
                                                 )}
                                               </div>
@@ -770,12 +770,12 @@ export default function AdminDashboard() {
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-headline text-xl">Currently Checked Out</CardTitle>
-                    <CardDescription>All books currently in possession of members.</CardDescription>
+                    <CardDescription>Books currently in possession of members.</CardDescription>
                   </div>
                   <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                      placeholder="Search title, member, ISBN..." 
+                      placeholder="Search title, member, ID..." 
                       className="pl-9" 
                       value={activeSearchQuery}
                       onChange={e => setActiveSearchQuery(e.target.value)}
@@ -786,7 +786,7 @@ export default function AdminDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Book & ISBN</TableHead>
+                        <TableHead>Book & ID</TableHead>
                         <TableHead>Checked Out To</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Fine</TableHead>
@@ -804,7 +804,7 @@ export default function AdminDashboard() {
                             <TableRow key={t.id}>
                               <TableCell>
                                 <div className="font-medium">{book?.title || 'Unknown'}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.isbn}</div>
+                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.bookNumber}</div>
                               </TableCell>
                               <TableCell>
                                 <div className="font-medium">{member?.name || 'Unknown'}</div>
@@ -846,13 +846,13 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline text-xl text-destructive">Overdue Books</CardTitle>
-                  <CardDescription>Books past their 14-day limit. Fine: ₹5/week.</CardDescription>
+                  <CardDescription>Books past 14 days. Fine: ₹5 base + ₹5/week incremental.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Book & ISBN</TableHead>
+                        <TableHead>Book & ID</TableHead>
                         <TableHead>Checked Out To</TableHead>
                         <TableHead>Due Date</TableHead>
                         <TableHead>Fine</TableHead>
@@ -868,7 +868,7 @@ export default function AdminDashboard() {
                             <TableRow key={t.id} className="bg-destructive/5">
                               <TableCell>
                                 <div className="font-medium">{book?.title || 'Unknown'}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.isbn}</div>
+                                <div className="text-[10px] font-mono text-muted-foreground uppercase">{book?.bookNumber}</div>
                               </TableCell>
                               <TableCell>
                                 <div className="font-medium">{member?.name || 'Unknown'}</div>
@@ -911,7 +911,7 @@ export default function AdminDashboard() {
                 <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <CardTitle className="font-headline text-xl">Recent Activity</CardTitle>
-                    <CardDescription>Real-time log of all book circulations.</CardDescription>
+                    <CardDescription>Real-time log of all circulations.</CardDescription>
                   </div>
                   <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

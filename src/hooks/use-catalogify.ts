@@ -28,7 +28,7 @@ export type Book = {
   id: string;
   title: string;
   author: string;
-  isbn: string;
+  bookNumber: string;
   category: string;
   totalCopies: number;
   availableCopies: number;
@@ -110,9 +110,12 @@ export function useCatalogify() {
     const today = new Date();
     dueDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
+    
     const diffTime = today.getTime() - dueDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
     if (diffDays > 0) {
+      // Progressive fine: ₹5 for the first week, and ₹5 for each additional week.
       const weeksOverdue = Math.ceil(diffDays / 7);
       return weeksOverdue * 5;
     }

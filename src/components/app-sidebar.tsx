@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -41,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 
   const overdueCount = transactions.filter(
-    (t) => t.status === "issued" && new Date(t.due_date) < new Date()
+    (t) => t.status === "issued" && new Date(t.dueDate) < new Date()
   ).length;
 
   const navItems = [
@@ -60,10 +59,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             isActive: pathname === "/admin",
           },
           {
-            title: "Checked Out",
-            url: "/admin?tab=active",
+            title: "Overdue",
+            url: "/admin",
             icon: AlertCircle,
-            isActive: pathname === "/admin" && overdueCount > 0,
+            isActive: false,
             badge: overdueCount > 0 ? overdueCount : undefined,
           },
         ]
@@ -137,7 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">{currentUser.name}</span>
-                      <span className="truncate text-xs">{currentUser.member_id}</span>
+                      <span className="truncate text-xs">{currentUser.memberId}</span>
                     </div>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
@@ -157,7 +156,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate font-semibold">{currentUser.name}</span>
                         <span className="truncate text-xs text-muted-foreground">
-                          {currentUser.member_id}
+                          {currentUser.memberId}
                         </span>
                       </div>
                     </div>

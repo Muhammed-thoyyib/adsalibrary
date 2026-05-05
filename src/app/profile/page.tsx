@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Header } from '@/components/header';
@@ -38,7 +37,7 @@ export default function ProfilePage() {
     );
   }
 
-  const myTransactions = transactions.filter(t => t.member_id === currentUser.id);
+  const myTransactions = transactions.filter(t => t.memberId === currentUser.id);
   const activeBorrowed = myTransactions.filter(t => t.status === 'issued');
   const pastBorrowed = myTransactions.filter(t => t.status === 'returned');
   
@@ -50,7 +49,6 @@ export default function ProfilePage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8">
-            {/* User Profile Info */}
             <div className="space-y-6">
               <Card className="overflow-hidden border-t-4 border-t-accent shadow-md">
                 <CardContent className="pt-8 flex flex-col items-center text-center">
@@ -64,7 +62,7 @@ export default function ProfilePage() {
                   <div className="w-full space-y-3 pt-6 border-t text-left">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Member ID:</span>
-                      <span className="font-medium">{currentUser.member_id}</span>
+                      <span className="font-medium">{currentUser.memberId}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Status:</span>
@@ -81,7 +79,7 @@ export default function ProfilePage() {
                       <Book className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-xs opacity-80 uppercase font-semibold">Checked Out</p>
+                      <p className="text-xs opacity-80 uppercase font-semibold">Active Loans</p>
                       <p className="text-2xl font-bold">{activeBorrowed.length}</p>
                     </div>
                   </CardContent>
@@ -100,13 +98,12 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Borrowing History */}
             <div className="space-y-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="font-headline">Current Loans</CardTitle>
-                    <CardDescription>14-day loan limit. Overdue fine: ₹5/week.</CardDescription>
+                    <CardDescription>14-day limit. Fine: ₹5 base + ₹5/week additional.</CardDescription>
                   </div>
                   <Clock className="h-5 w-5 text-muted-foreground" />
                 </CardHeader>
@@ -122,14 +119,14 @@ export default function ProfilePage() {
                       </TableHeader>
                       <TableBody>
                         {activeBorrowed.map(t => {
-                          const book = books.find(b => b.id === t.book_id);
-                          const isOverdue = new Date(t.due_date) < new Date();
+                          const book = books.find(b => b.id === t.bookId);
+                          const isOverdue = new Date(t.dueDate) < new Date();
                           const fine = calculateFine(t);
                           return (
                             <TableRow key={t.id}>
                               <TableCell className="font-medium">{book?.title}</TableCell>
                               <TableCell className={isOverdue ? 'text-destructive font-semibold' : ''}>
-                                {t.due_date}
+                                {t.dueDate}
                                 {isOverdue && <span className="ml-2 text-xs">(Overdue)</span>}
                               </TableCell>
                               <TableCell className={fine > 0 ? 'text-destructive font-bold' : ''}>
@@ -142,7 +139,7 @@ export default function ProfilePage() {
                     </Table>
                   ) : (
                     <div className="py-10 text-center text-muted-foreground italic">
-                      You haven&apos;t checked out any books yet.
+                      No active loans. Explore the catalog to check out books!
                     </div>
                   )}
                 </CardContent>
@@ -160,20 +157,15 @@ export default function ProfilePage() {
                         <TableRow>
                           <TableHead>Book Title</TableHead>
                           <TableHead>Checked In On</TableHead>
-                          <TableHead>Fine Paid</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {pastBorrowed.map(t => {
-                          const book = books.find(b => b.id === t.book_id);
-                          const fine = calculateFine(t);
+                          const book = books.find(b => b.id === t.bookId);
                           return (
                             <TableRow key={t.id}>
                               <TableCell className="font-medium text-muted-foreground">{book?.title}</TableCell>
-                              <TableCell className="text-muted-foreground">{t.return_date}</TableCell>
-                              <TableCell className="text-muted-foreground">
-                                ₹{fine}
-                              </TableCell>
+                              <TableCell className="text-muted-foreground">{t.returnDate}</TableCell>
                             </TableRow>
                           );
                         })}
